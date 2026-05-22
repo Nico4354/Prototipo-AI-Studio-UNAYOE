@@ -59,7 +59,14 @@ export default function Sidebar({ currentView, onNavigate, onLogout }: SidebarPr
           <span className="text-sm">Historial Clínico</span>
         </button>
 
-        <button className="w-full flex items-center gap-3 p-2 rounded-md text-slate-500 hover:bg-slate-50 transition-colors">
+        <button 
+          onClick={() => onNavigate('resources')}
+          className={`w-full flex items-center gap-3 p-2 rounded-md transition-colors ${
+            currentView === 'resources' 
+              ? 'bg-slate-50 text-blue-700 font-medium' 
+              : 'text-slate-500 hover:bg-slate-50'
+          }`}
+        >
           <GraduationCap className="w-4 h-4" />
           <span className="text-sm">Recursos y Talleres</span>
         </button>

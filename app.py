@@ -96,6 +96,44 @@ def history():
         ]
     })
 
+@app.route('/api/resources', methods=['GET'])
+def resources():
+    return jsonify({
+        'status': 'success',
+        'workshops': [
+            {
+                'id': 'w1',
+                'title': 'Taller de Manejo de Ansiedad en Parciales',
+                'date': '25 Oct 2026',
+                'time': '15:00 - 16:30',
+                'type': 'Virtual',
+                'icon': 'Video'
+            },
+            {
+                'id': 'w2',
+                'title': 'Gestión del Tiempo en Ciclos Finales',
+                'date': '28 Oct 2026',
+                'time': '10:00 - 12:00',
+                'type': 'Presencial',
+                'icon': 'Calendar'
+            }
+        ],
+        'guides': [
+            {
+                'id': 'g1',
+                'title': 'Técnica Pomodoro para Programadores',
+                'description': 'Maximiza tu concentración estructurando tus sesiones de código.',
+                'icon': 'Clock'
+            },
+            {
+                'id': 'g2',
+                'title': 'Guía de Higiene del Sueño',
+                'description': 'Mejora tu descanso y rendimiento académico con rutinas efectivas.',
+                'icon': 'Moon'
+            }
+        ]
+    })
+
 if __name__ == '__main__':
     print("Iniciando UNAYOE FISI Backend en http://localhost:5000")
     app.run(debug=True, port=5000)
