@@ -67,6 +67,35 @@ def dashboard():
         ]
     })
 
+@app.route('/api/history', methods=['GET'])
+def history():
+    return jsonify({
+        'status': 'success',
+        'records': [
+            {
+                'id': '1',
+                'date': '15 May 2026',
+                'riskLevel': 'Moderado',
+                'riskColor': 'orange',
+                'summary': 'Tensión constante por exámenes parciales.'
+            },
+            {
+                'id': '2',
+                'date': '10 Abr 2026',
+                'riskLevel': 'Bajo',
+                'riskColor': 'emerald',
+                'summary': 'Manejo adecuado de prácticas y laboratorios.'
+            },
+            {
+                'id': '3',
+                'date': '12 Mar 2026',
+                'riskLevel': 'Alto',
+                'riskColor': 'rose',
+                'summary': 'Abrumado, dificultad para concentrarse en clases.'
+            }
+        ]
+    })
+
 if __name__ == '__main__':
     print("Iniciando UNAYOE FISI Backend en http://localhost:5000")
     app.run(debug=True, port=5000)

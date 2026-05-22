@@ -3,8 +3,9 @@ import Login from './components/Login';
 import EvaluationForm from './components/EvaluationForm';
 import ProcessingModal from './components/ProcessingModal';
 import Dashboard from './components/Dashboard';
+import ClinicalHistory from './components/ClinicalHistory';
 
-type ViewState = 'login' | 'evaluation' | 'processing' | 'dashboard';
+type ViewState = 'login' | 'evaluation' | 'processing' | 'dashboard' | 'history';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewState>('login');
@@ -16,7 +17,7 @@ export default function App() {
   const handleLogout = () => setCurrentView('login');
   
   const handleNavigate = (view: string) => {
-    if (view === 'dashboard' || view === 'evaluation') {
+    if (view === 'dashboard' || view === 'evaluation' || view === 'history') {
       setCurrentView(view as ViewState);
     }
   };
@@ -50,6 +51,13 @@ export default function App() {
       {currentView === 'dashboard' && (
         <Dashboard 
           onLogout={handleLogout} 
+          onNavigate={handleNavigate}
+        />
+      )}
+
+      {currentView === 'history' && (
+        <ClinicalHistory
+          onLogout={handleLogout}
           onNavigate={handleNavigate}
         />
       )}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Smile, Meh, Frown, ArrowRight, Bell } from 'lucide-react';
+import { Smile, Meh, Frown, ArrowRight, Bell, User } from 'lucide-react';
 import Sidebar from './Sidebar';
 
 interface EvaluationFormProps {
@@ -56,12 +56,8 @@ export default function EvaluationForm({ onNext, onLogout, onNavigate }: Evaluat
                 <p className="text-xs font-semibold">Alex Rivera</p>
                 <p className="text-[10px] text-slate-400 leading-none">Ingeniería de Software</p>
               </div>
-              <div className="w-9 h-9 bg-slate-200 rounded-full border-2 border-white shadow-sm overflow-hidden">
-                <img 
-                  alt="Avatar" 
-                  className="w-full h-full object-cover" 
-                  src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?q=80&w=200&auto=format&fit=crop" 
-                />
+              <div className="w-9 h-9 bg-slate-100 rounded-full border-2 border-white shadow-sm overflow-hidden flex items-center justify-center text-slate-500">
+                <User size={18} />
               </div>
             </div>
           </div>
