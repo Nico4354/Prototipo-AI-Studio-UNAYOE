@@ -84,9 +84,16 @@ export default function Sidebar({ currentView, onNavigate, onLogout }: SidebarPr
         </button>
       </nav>
 
-      <div className="mt-auto space-y-4">
+       <div className="mt-auto space-y-4">
         <div className="space-y-1 border-t border-slate-100 pt-4">
-          <button className="w-full flex items-center gap-3 p-2 rounded-md text-slate-500 hover:bg-slate-50 transition-colors">
+          <button 
+            onClick={() => onNavigate('settings')}
+            className={`w-full flex items-center gap-3 p-2 rounded-md transition-colors ${
+              currentView === 'settings' 
+                ? 'bg-slate-50 text-blue-700 font-medium' 
+                : 'text-slate-500 hover:bg-slate-50'
+            }`}
+          >
             <Settings className="w-4 h-4" />
             <span className="text-sm">Configuración</span>
           </button>

@@ -145,6 +145,25 @@ def support():
         'message': 'Ticket recibido'
     })
 
+@app.route('/api/settings', methods=['GET', 'POST'])
+def settings():
+    if request.method == 'GET':
+        return jsonify({
+            'status': 'success',
+            'notifications': {
+                'workshops': True,
+                'pauses': False,
+                'monthlyEmails': True
+            }
+        })
+    elif request.method == 'POST':
+        data = request.json
+        time.sleep(0.5)
+        return jsonify({
+            'status': 'success',
+            'message': 'Configuración actualizada'
+        })
+
 if __name__ == '__main__':
     print("Iniciando UNAYOE FISI Backend en http://localhost:5000")
     app.run(debug=True, port=5000)
