@@ -5,8 +5,9 @@ import ProcessingModal from './components/ProcessingModal';
 import Dashboard from './components/Dashboard';
 import ClinicalHistory from './components/ClinicalHistory';
 import Resources from './components/Resources';
+import TechnicalSupport from './components/TechnicalSupport';
 
-type ViewState = 'login' | 'evaluation' | 'processing' | 'dashboard' | 'history' | 'resources';
+type ViewState = 'login' | 'evaluation' | 'processing' | 'dashboard' | 'history' | 'resources' | 'support';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewState>('login');
@@ -18,7 +19,7 @@ export default function App() {
   const handleLogout = () => setCurrentView('login');
   
   const handleNavigate = (view: string) => {
-    if (view === 'dashboard' || view === 'evaluation' || view === 'history' || view === 'resources') {
+    if (view === 'dashboard' || view === 'evaluation' || view === 'history' || view === 'resources' || view === 'support') {
       setCurrentView(view as ViewState);
     }
   };
@@ -65,6 +66,13 @@ export default function App() {
 
       {currentView === 'resources' && (
         <Resources
+          onLogout={handleLogout}
+          onNavigate={handleNavigate}
+        />
+      )}
+
+      {currentView === 'support' && (
+        <TechnicalSupport
           onLogout={handleLogout}
           onNavigate={handleNavigate}
         />

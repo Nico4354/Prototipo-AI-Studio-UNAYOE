@@ -134,6 +134,17 @@ def resources():
         ]
     })
 
+@app.route('/api/support', methods=['POST'])
+def support():
+    data = request.json
+    # Simulate processing time
+    time.sleep(1)
+    return jsonify({
+        'status': 'success',
+        'ticketId': 'TKT-1042',
+        'message': 'Ticket recibido'
+    })
+
 if __name__ == '__main__':
     print("Iniciando UNAYOE FISI Backend en http://localhost:5000")
     app.run(debug=True, port=5000)
