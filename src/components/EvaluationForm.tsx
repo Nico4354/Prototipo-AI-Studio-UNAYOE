@@ -25,7 +25,7 @@ export default function EvaluationForm({ onNext, onLogout, onNavigate }: Evaluat
 
     try {
       // Trying to hit the backend
-      await fetch('http://localhost:5000/api/evaluate', {
+      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/evaluate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)

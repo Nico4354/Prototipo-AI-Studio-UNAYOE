@@ -20,7 +20,7 @@ export default function Settings({ onLogout, onNavigate }: SettingsProps) {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/settings');
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/settings`);
         const data = await response.json();
         if (data.status === 'success') {
           setPreferences(data.notifications);
@@ -45,7 +45,7 @@ export default function Settings({ onLogout, onNavigate }: SettingsProps) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await fetch('http://localhost:5000/api/settings', {
+      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(preferences),

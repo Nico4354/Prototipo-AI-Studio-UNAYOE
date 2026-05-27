@@ -35,7 +35,7 @@ export default function Dashboard({ onLogout, onNavigate }: DashboardProps) {
     // Fetch dashboard data
     const fetchData = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/dashboard');
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/dashboard`);
         const result = await response.json();
         setData(result);
       } catch (err) {
