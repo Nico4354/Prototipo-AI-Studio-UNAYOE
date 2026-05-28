@@ -148,8 +148,17 @@ export default function EvaluationForm({ onNext, onLogout, onNavigate }: Evaluat
                     id="sleep-quality" 
                     placeholder="Ej. 7" 
                     type="number"
+                    min="0"
+                    max="24"
                     value={sleepQuality}
-                    onChange={(e) => setSleepQuality(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        setSleepQuality('');
+                      } else {
+                        setSleepQuality(Math.max(0, Number(val)).toString());
+                      }
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
