@@ -150,14 +150,24 @@ export default function EvaluationForm({ onNext, onLogout, onNavigate }: Evaluat
                     type="number"
                     min="0"
                     max="24"
-                    value={sleepQuality}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === '') {
-                        setSleepQuality('');
-                      } else {
-                        setSleepQuality(Math.max(0, Number(val)).toString());
+                    value={sleepQuality === '0' || sleepQuality === 0 ? '' : sleepQuality}
+                    onKeyDown={(e) => {
+                      if (['-', '+', 'e', 'E', '.', ','].includes(e.key)) {
+                        e.preventDefault();
                       }
+                    }}
+                    onChange={(e) => {
+                      let val = parseInt(e.target.value, 10);
+                      
+                      if (isNaN(val)) {
+                        setSleepQuality('');
+                        return;
+                      }
+                      
+                      if (val > 24) val = 24;
+                      if (val < 0) val = 0;
+                      
+                      setSleepQuality(val.toString());
                     }}
                   />
                 </div>
