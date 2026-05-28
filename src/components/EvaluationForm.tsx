@@ -147,22 +147,19 @@ export default function EvaluationForm({ onNext, onLogout, onNavigate }: Evaluat
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow text-slate-700" 
                     id="sleep-quality" 
                     placeholder="Ej. 7" 
-                    type="number"
-                    min="0"
-                    max="24"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={sleepQuality === '0' || sleepQuality === 0 ? '' : sleepQuality}
-                    onKeyDown={(e) => {
-                      if (['-', '+', 'e', 'E', '.', ','].includes(e.key)) {
-                        e.preventDefault();
-                      }
-                    }}
                     onChange={(e) => {
-                      let val = parseInt(e.target.value, 10);
+                      const rawValue = e.target.value.replace(/\D/g, '');
                       
-                      if (isNaN(val)) {
+                      if (rawValue === '') {
                         setSleepQuality('');
                         return;
                       }
+                      
+                      let val = parseInt(rawValue, 10);
                       
                       if (val > 24) val = 24;
                       if (val < 0) val = 0;
