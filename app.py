@@ -13,6 +13,8 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
 import google.generativeai as genai
+import mysql.connector
+from mysql.connector import Error
 
 # Cargar variables de entorno desde .env (desarrollo local)
 load_dotenv()
@@ -27,8 +29,51 @@ GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
-# Almacenamiento en memoria para el prototipo (sin BD aún)
+# Almacenamiento en memoria para el prototipo (fallback)
 _ultimo_diagnostico = {}
+
+# ---------------------------------------------------------------------------
+# Conexión a Base de Datos MySQL (Railway)
+# ---------------------------------------------------------------------------
+def get_db_connection():
+    try:
+        connection = mysql.connector.connect(
+            host=os.environ.get('MYSQL_HOST', 'maglev.proxy.rlwy.net'),
+            port=int(os.environ.get('MYSQL_PORT', 12076)),
+            user=os.environ.get('MYSQL_USER', 'root'),
+            password=os.environ.get('MYSQL_PASSWORD', ''),
+            database=os.environ.get('MYSQL_DATABASE', 'railway')
+        )
+        return connection
+    except Error as e:
+        print(f"Error connecting to MySQL: {e}")
+        return None
+
+def ensure_default_student():
+    """Garantiza que exista un estudiante de prueba en la base de datos."""
+    conn = get_db_connection()
+    if not conn:
+        return 1
+    
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT id FROM estudiantes WHERE correo = %s", ('alex.rivera@unmsm.edu.pe',))
+        student = cursor.fetchone()
+        
+        if student:
+            return student['id']
+            
+        insert_query = "INSERT INTO estudiantes (nombre, correo, programa_academico, password) VALUES (%s, %s, %s, %s)"
+        cursor.execute(insert_query, ('Alex Rivera', 'alex.rivera@unmsm.edu.pe', 'Ingeniería de Software', '123456'))
+        conn.commit()
+        return cursor.lastrowid
+    except Error as e:
+        print(f"Error ensuring default student: {e}")
+        return 1
+    finally:
+        if conn.is_connected():
+            cursor.close()
+            conn.close()
 
 # ---------------------------------------------------------------------------
 # Prompt de tamizaje GAD-7 para Gemini
@@ -112,10 +157,22 @@ def evaluate():
     global _ultimo_diagnostico
     data = request.json
 
-    nivel_estres = data.get('stressLevel', 'no especificado')
-    horas_sueno = data.get('sleepQuality', 'no especificado')
-    impacto_energia = data.get('energyImpact', 'no especificado')
+    nivel_estres = data.get('stressLevel', 'bajo')
+    horas_sueno = data.get('sleepQuality', '7')
+    impacto_energia = data.get('energyImpact', 'Medio')
     observaciones = data.get('observations', 'Sin observaciones')
+
+    # Mapeo a numéricos para BD
+    map_estres = {'bajo': 3, 'moderado': 6, 'alto': 9}
+    nivel_estres_num = map_estres.get(nivel_estres.lower(), 5)
+    
+    try:
+        horas_sueno_num = float(horas_sueno)
+    except ValueError:
+        horas_sueno_num = 7.0
+        
+    map_energia = {'Nulo': 1, 'Medio': 5, 'Severo': 9}
+    impacto_energia_num = map_energia.get(impacto_energia, 5)
 
     # Verificar que Gemini está configurado
     if not GEMINI_API_KEY:
@@ -154,6 +211,42 @@ def evaluate():
         # Validar estructura mínima
         if 'nivel_riesgo' not in diagnostico:
             raise ValueError('Respuesta de IA sin nivel_riesgo')
+
+        # -------------------------------------------------------------
+        # Guardar en Base de Datos MySQL
+        # -------------------------------------------------------------
+        estudiante_id = ensure_default_student()
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                # 1. Insertar evaluación
+                query_eval = """
+                INSERT INTO evaluaciones (estudiante_id, nivel_estres, horas_sueno, impacto_energia, observaciones)
+                VALUES (%s, %s, %s, %s, %s)
+                """
+                cursor.execute(query_eval, (estudiante_id, nivel_estres_num, horas_sueno_num, impacto_energia_num, observaciones))
+                evaluacion_id = cursor.lastrowid
+                
+                # 2. Insertar diagnóstico IA
+                query_diag = """
+                INSERT INTO diagnosticos_ia (evaluacion_id, nivel_riesgo, descripcion_riesgo, sugerencias_json)
+                VALUES (%s, %s, %s, %s)
+                """
+                cursor.execute(query_diag, (
+                    evaluacion_id, 
+                    diagnostico.get('nivel_riesgo', 'Desconocido'),
+                    diagnostico.get('descripcion_riesgo', ''),
+                    json.dumps(diagnostico.get('sugerencias', []))
+                ))
+                
+                conn.commit()
+            except Error as e:
+                print(f"Error guardando en BD: {e}")
+            finally:
+                if conn.is_connected():
+                    cursor.close()
+                    conn.close()
 
         # Almacenar en memoria para el dashboard (prototipo)
         _ultimo_diagnostico = diagnostico
