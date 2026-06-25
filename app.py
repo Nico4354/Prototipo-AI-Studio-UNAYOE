@@ -191,7 +191,7 @@ def evaluate():
         )
 
         # Llamar a Gemini
-        model = genai.GenerativeModel('gemini-2.0-flash')
+        model = genai.GenerativeModel('gemini-pro')
         response = model.generate_content(prompt)
 
         # Parsear la respuesta JSON de Gemini
