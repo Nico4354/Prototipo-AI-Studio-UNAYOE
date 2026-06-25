@@ -10,14 +10,48 @@ import Settings from './components/Settings';
 
 type ViewState = 'login' | 'evaluation' | 'processing' | 'dashboard' | 'history' | 'resources' | 'support' | 'settings';
 
+// Tipos para los datos de evaluación y diagnóstico IA
+interface EvaluationData {
+  stressLevel: string;
+  sleepQuality: string;
+  energyImpact: string;
+  observations: string;
+}
+
+export interface DiagnosticoIA {
+  nivel_riesgo: string;
+  descripcion_riesgo: string;
+  sugerencias: {
+    title: string;
+    description: string;
+    actionText: string;
+    icon: string;
+  }[];
+}
+
 export default function App() {
   const [currentView, setCurrentView] = useState<ViewState>('login');
+  const [evaluationData, setEvaluationData] = useState<EvaluationData | null>(null);
+  const [aiDiagnostico, setAiDiagnostico] = useState<DiagnosticoIA | null>(null);
   
   // Handlers for state transitions
   const handleLoginSuccess = () => setCurrentView('evaluation');
-  const handleEvaluationSubmit = () => setCurrentView('processing');
-  const handleProcessingComplete = () => setCurrentView('dashboard');
-  const handleLogout = () => setCurrentView('login');
+  
+  const handleEvaluationSubmit = (data: EvaluationData) => {
+    setEvaluationData(data);
+    setCurrentView('processing');
+  };
+  
+  const handleProcessingComplete = (diagnostico: DiagnosticoIA) => {
+    setAiDiagnostico(diagnostico);
+    setCurrentView('dashboard');
+  };
+  
+  const handleLogout = () => {
+    setCurrentView('login');
+    setEvaluationData(null);
+    setAiDiagnostico(null);
+  };
   
   const handleNavigate = (view: string) => {
     if (view === 'dashboard' || view === 'evaluation' || view === 'history' || view === 'resources' || view === 'support' || view === 'settings') {
@@ -47,7 +81,10 @@ export default function App() {
               onNavigate={handleNavigate}
             />
           </div>
-          <ProcessingModal onComplete={handleProcessingComplete} />
+          <ProcessingModal 
+            evaluationData={evaluationData}
+            onComplete={handleProcessingComplete} 
+          />
         </>
       )}
       
@@ -55,6 +92,7 @@ export default function App() {
         <Dashboard 
           onLogout={handleLogout} 
           onNavigate={handleNavigate}
+          aiDiagnostico={aiDiagnostico}
         />
       )}
 

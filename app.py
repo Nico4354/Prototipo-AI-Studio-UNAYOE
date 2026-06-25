@@ -1,17 +1,92 @@
+"""
+UNAYOE FISI — Backend de Bienestar Universitario
+Evaluador de tamizaje basado en GAD-7 con Gemini AI.
+
+IMPORTANTE: Este sistema emite ALERTAS DE SUSCEPTIBILIDAD,
+NO diagnósticos clínicos. Es un prototipo de tamizaje.
+"""
+
+import os
+import json
+import time
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import time
+from dotenv import load_dotenv
+import google.generativeai as genai
+
+# Cargar variables de entorno desde .env (desarrollo local)
+load_dotenv()
 
 app = Flask(__name__)
-CORS(app) # Enable CORS for frontend requests
+CORS(app)
+
+# ---------------------------------------------------------------------------
+# Configuración de Gemini AI
+# ---------------------------------------------------------------------------
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+
+# Almacenamiento en memoria para el prototipo (sin BD aún)
+_ultimo_diagnostico = {}
+
+# ---------------------------------------------------------------------------
+# Prompt de tamizaje GAD-7 para Gemini
+# ---------------------------------------------------------------------------
+PROMPT_TAMIZAJE = """
+Eres un asistente de tamizaje de bienestar universitario del programa UNAYOE FISI
+de la Universidad Nacional Mayor de San Marcos. Tu rol es evaluar indicadores de
+bienestar estudiantil inspirándote en la escala GAD-7 (General Anxiety Disorder 7).
+
+REGLAS ESTRICTAS:
+1. NUNCA emitas un "diagnóstico médico". Siempre usa el término "alerta de susceptibilidad".
+2. NUNCA uses palabras como "trastorno", "enfermedad", "patología" o "diagnóstico".
+3. Usa lenguaje empático, cercano y no alarmista.
+4. Siempre recomienda consultar con un profesional de UNAYOE para una evaluación completa.
+5. Responde ÚNICAMENTE en formato JSON válido, sin markdown ni texto adicional.
+
+DATOS DEL ESTUDIANTE:
+- Nivel de estrés percibido: {nivel_estres}
+- Horas de sueño promedio por noche: {horas_sueno}
+- Impacto en energía diaria: {impacto_energia}
+- Observaciones del estudiante: {observaciones}
+
+CRITERIOS DE CLASIFICACIÓN (inspirados en GAD-7):
+- "Bajo": Indicadores dentro de rangos saludables. Estrés manejable.
+- "Moderado": Algunos indicadores fuera de rango. Tensión sostenida pero funcional.
+- "Elevado": Múltiples indicadores preocupantes. Afectación notable en el día a día.
+- "Crítico": Indicadores alarmantes. Se recomienda atención prioritaria de UNAYOE.
+
+Responde EXCLUSIVAMENTE con este JSON (sin ```json, sin texto antes o después):
+{{
+  "nivel_riesgo": "Bajo|Moderado|Elevado|Crítico",
+  "descripcion_riesgo": "Descripción empática de 2-3 oraciones sobre el estado del estudiante, usando lenguaje de tamizaje y susceptibilidad, NUNCA diagnóstico.",
+  "sugerencias": [
+    {{
+      "title": "Título de la sugerencia",
+      "description": "Descripción práctica y accionable de la sugerencia.",
+      "actionText": "Texto del botón de acción",
+      "icon": "User|BookOpen|Moon|Calendar|Clock|Heart"
+    }}
+  ]
+}}
+
+Genera exactamente 3 sugerencias personalizadas según los indicadores del estudiante.
+"""
+
+
+# ===========================================================================
+# ENDPOINTS
+# ===========================================================================
 
 @app.route('/api/login', methods=['POST'])
 def login():
+    """Autenticación mock para el prototipo."""
     data = request.json
     email = data.get('email', '')
     password = data.get('password', '')
-    
-    # Simple mock validation
+
+    # Validación mock simple
     if email and password:
         return jsonify({
             'status': 'success',
@@ -26,49 +101,113 @@ def login():
             'message': 'Credenciales incompletas'
         }), 400
 
+
 @app.route('/api/evaluate', methods=['POST'])
 def evaluate():
+    """
+    Endpoint principal de tamizaje.
+    Recibe los datos del formulario de evaluación y los envía a Gemini
+    para obtener una alerta de susceptibilidad basada en GAD-7.
+    """
+    global _ultimo_diagnostico
     data = request.json
-    # Simulate processing time
-    time.sleep(1)
-    return jsonify({
-        'status': 'success',
-        'message': 'Evaluación recibida y procesada con éxito'
-    })
+
+    nivel_estres = data.get('stressLevel', 'no especificado')
+    horas_sueno = data.get('sleepQuality', 'no especificado')
+    impacto_energia = data.get('energyImpact', 'no especificado')
+    observaciones = data.get('observations', 'Sin observaciones')
+
+    # Verificar que Gemini está configurado
+    if not GEMINI_API_KEY:
+        return jsonify({
+            'status': 'error',
+            'message': 'GEMINI_API_KEY no configurada en el servidor.'
+        }), 500
+
+    try:
+        # Construir el prompt con los datos del estudiante
+        prompt = PROMPT_TAMIZAJE.format(
+            nivel_estres=nivel_estres,
+            horas_sueno=horas_sueno,
+            impacto_energia=impacto_energia,
+            observaciones=observaciones if observaciones else 'Sin observaciones adicionales'
+        )
+
+        # Llamar a Gemini
+        model = genai.GenerativeModel('gemini-2.0-flash')
+        response = model.generate_content(prompt)
+
+        # Parsear la respuesta JSON de Gemini
+        response_text = response.text.strip()
+
+        # Limpiar posibles markdown wrappers
+        if response_text.startswith('```json'):
+            response_text = response_text[7:]
+        if response_text.startswith('```'):
+            response_text = response_text[3:]
+        if response_text.endswith('```'):
+            response_text = response_text[:-3]
+        response_text = response_text.strip()
+
+        diagnostico = json.loads(response_text)
+
+        # Validar estructura mínima
+        if 'nivel_riesgo' not in diagnostico:
+            raise ValueError('Respuesta de IA sin nivel_riesgo')
+
+        # Almacenar en memoria para el dashboard (prototipo)
+        _ultimo_diagnostico = diagnostico
+
+        return jsonify({
+            'status': 'success',
+            'diagnostico': diagnostico
+        })
+
+    except json.JSONDecodeError as e:
+        return jsonify({
+            'status': 'error',
+            'message': 'Error al interpretar la respuesta del análisis de IA. Intenta nuevamente.'
+        }), 500
+    except Exception as e:
+        return jsonify({
+            'status': 'error',
+            'message': f'Error en el análisis de IA: {str(e)}'
+        }), 500
+
 
 @app.route('/api/dashboard', methods=['GET'])
 def dashboard():
+    """
+    Devuelve los datos del último análisis de IA.
+    Si no hay análisis previo, devuelve datos por defecto.
+    """
+    if _ultimo_diagnostico:
+        return jsonify({
+            'status': 'success',
+            'riskLevel': _ultimo_diagnostico.get('nivel_riesgo', 'Sin evaluar'),
+            'riskDescription': _ultimo_diagnostico.get('descripcion_riesgo', ''),
+            'suggestions': _ultimo_diagnostico.get('sugerencias', [])
+        })
+
+    # Fallback si no hay evaluación previa
     return jsonify({
         'status': 'success',
-        'riskLevel': 'Elevado',
-        'riskDescription': 'Basado en tu última evaluación. Se detecta fatiga académica alta.',
+        'riskLevel': 'Sin evaluar',
+        'riskDescription': 'Aún no has completado tu primera evaluación de bienestar. Completa el formulario para recibir tu alerta de susceptibilidad.',
         'suggestions': [
             {
-                'title': 'Taller de Manejo de Ansiedad',
-                'description': 'Aprende técnicas de respiración y mindfulness para reducir el estrés antes de exámenes.',
-                'actionLink': '#',
-                'actionText': 'Ver taller',
+                'title': 'Completa tu primera evaluación',
+                'description': 'Responde las preguntas de bienestar para recibir recomendaciones personalizadas.',
+                'actionText': 'Ir a evaluación',
                 'icon': 'User'
-            },
-            {
-                'title': 'Técnicas de Estudio',
-                'description': 'Optimiza tu tiempo con métodos probados para mejorar la retención y el enfoque.',
-                'actionLink': '#',
-                'actionText': 'Leer más',
-                'icon': 'BookOpen'
-            },
-            {
-                'title': 'Higiene del Sueño',
-                'description': 'Consejos prácticos para regularizar tus ciclos de descanso y mejorar tu rendimiento cognitivo diario.',
-                'actionLink': '#',
-                'actionText': 'Ver guía completa',
-                'icon': 'Moon'
             }
         ]
     })
 
+
 @app.route('/api/history', methods=['GET'])
 def history():
+    """Historial de evaluaciones (mock para prototipo)."""
     return jsonify({
         'status': 'success',
         'records': [
@@ -96,8 +235,10 @@ def history():
         ]
     })
 
+
 @app.route('/api/resources', methods=['GET'])
 def resources():
+    """Catálogo de recursos de bienestar (mock para prototipo)."""
     return jsonify({
         'status': 'success',
         'workshops': [
@@ -134,10 +275,12 @@ def resources():
         ]
     })
 
+
 @app.route('/api/support', methods=['POST'])
 def support():
+    """Crear ticket de soporte (mock para prototipo)."""
     data = request.json
-    # Simulate processing time
+    # Simular procesamiento
     time.sleep(1)
     return jsonify({
         'status': 'success',
@@ -145,8 +288,10 @@ def support():
         'message': 'Ticket recibido'
     })
 
+
 @app.route('/api/settings', methods=['GET', 'POST'])
 def settings():
+    """Configuración de notificaciones (mock para prototipo)."""
     if request.method == 'GET':
         return jsonify({
             'status': 'success',
@@ -164,6 +309,8 @@ def settings():
             'message': 'Configuración actualizada'
         })
 
+
 if __name__ == '__main__':
     print("Iniciando UNAYOE FISI Backend en http://0.0.0.0:5000")
+    print(f"Gemini API Key: {'Configurada' if GEMINI_API_KEY else 'NO CONFIGURADA'}")
     app.run(host='0.0.0.0', port=5000, debug=False)

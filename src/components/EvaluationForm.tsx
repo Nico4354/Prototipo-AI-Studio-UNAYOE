@@ -14,25 +14,15 @@ export default function EvaluationForm({ onNext, onLogout, onNavigate }: Evaluat
   const [energyImpact, setEnergyImpact] = useState<string>('Medio');
   const [observations, setObservations] = useState('');
 
-  const handleSubmit = async () => {
-    // Collect data
+  const handleSubmit = () => {
+    // Recopilar datos del formulario y pasarlos al componente padre.
+    // La llamada real a la API se hará en ProcessingModal.
     const data = {
       stressLevel,
       sleepQuality,
       energyImpact,
       observations
     };
-
-    try {
-      // Trying to hit the backend
-      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/evaluate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-    } catch (err) {
-      console.warn("Backend not running, proceeding anyway");
-    }
 
     onNext(data);
   };

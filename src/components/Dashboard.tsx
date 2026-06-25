@@ -6,13 +6,18 @@ import {
   BookOpen, 
   Moon, 
   ChevronRight,
-  LifeBuoy 
+  LifeBuoy,
+  Calendar,
+  Clock,
+  Heart
 } from 'lucide-react';
 import Sidebar from './Sidebar';
+import type { DiagnosticoIA } from '../App';
 
 interface DashboardProps {
   onLogout: () => void;
   onNavigate: (view: string) => void;
+  aiDiagnostico?: DiagnosticoIA | null;
 }
 
 interface DashboardData {
@@ -22,17 +27,27 @@ interface DashboardData {
   suggestions?: {
     title: string;
     description: string;
-    actionLink: string;
+    actionLink?: string;
     actionText: string;
     icon: string;
   }[];
 }
 
-export default function Dashboard({ onLogout, onNavigate }: DashboardProps) {
+export default function Dashboard({ onLogout, onNavigate, aiDiagnostico }: DashboardProps) {
   const [data, setData] = useState<DashboardData | null>(null);
 
   useEffect(() => {
-    // Fetch dashboard data
+    // Si recibimos datos reales de la IA, usarlos directamente
+    if (aiDiagnostico) {
+      setData({
+        riskLevel: aiDiagnostico.nivel_riesgo,
+        riskDescription: aiDiagnostico.descripcion_riesgo,
+        suggestions: aiDiagnostico.sugerencias,
+      });
+      return;
+    }
+
+    // Fallback: intentar cargar desde el backend
     const fetchData = async () => {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/dashboard`);
@@ -42,29 +57,14 @@ export default function Dashboard({ onLogout, onNavigate }: DashboardProps) {
         // Mock data if backend is not available
         console.warn('Backend not available, using fallback data');
         setData({
-          riskLevel: 'Elevado',
-          riskDescription: 'Basado en tu última evaluación. Se detecta fatiga académica alta.',
+          riskLevel: 'Sin evaluar',
+          riskDescription: 'Aún no has completado tu primera evaluación de bienestar.',
           suggestions: [
             {
-              title: 'Taller de Manejo de Ansiedad',
-              description: 'Aprende técnicas de respiración y mindfulness para reducir el estrés antes de exámenes.',
-              actionLink: '#',
-              actionText: 'Ver taller',
+              title: 'Completa tu evaluación',
+              description: 'Responde las preguntas de bienestar para recibir recomendaciones personalizadas.',
+              actionText: 'Ir a evaluación',
               icon: 'User'
-            },
-            {
-              title: 'Técnicas de Estudio',
-              description: 'Optimiza tu tiempo con métodos probados para mejorar la retención y el enfoque.',
-              actionLink: '#',
-              actionText: 'Leer más',
-              icon: 'BookOpen'
-            },
-            {
-              title: 'Higiene del Sueño',
-              description: 'Consejos prácticos para regularizar tus ciclos de descanso y mejorar tu rendimiento cognitivo diario.',
-              actionLink: '#',
-              actionText: 'Ver guía completa',
-              icon: 'Moon'
             }
           ]
         });
@@ -72,16 +72,37 @@ export default function Dashboard({ onLogout, onNavigate }: DashboardProps) {
     };
     
     fetchData();
-  }, []);
+  }, [aiDiagnostico]);
+
+  // Determinar colores según nivel de riesgo
+  const getRiskStyles = (level: string) => {
+    switch (level) {
+      case 'Bajo':
+        return { badge: 'bg-emerald-100 text-emerald-700', ring: 'text-emerald-400', offset: '376.8' };
+      case 'Moderado':
+        return { badge: 'bg-orange-100 text-orange-700', ring: 'text-orange-400', offset: '200.96' };
+      case 'Elevado':
+        return { badge: 'bg-violet-100 text-violet-700', ring: 'text-violet-400', offset: '125.6' };
+      case 'Crítico':
+        return { badge: 'bg-rose-100 text-rose-700', ring: 'text-rose-500', offset: '50.24' };
+      default:
+        return { badge: 'bg-slate-100 text-slate-500', ring: 'text-slate-300', offset: '502.4' };
+    }
+  };
 
   const getIcon = (name: string) => {
     switch (name) {
       case 'User': return <User className="w-6 h-6" />;
       case 'BookOpen': return <BookOpen className="w-6 h-6" />;
       case 'Moon': return <Moon className="w-6 h-6" />;
+      case 'Calendar': return <Calendar className="w-6 h-6" />;
+      case 'Clock': return <Clock className="w-6 h-6" />;
+      case 'Heart': return <Heart className="w-6 h-6" />;
       default: return <User className="w-6 h-6" />;
     }
   };
+
+  const riskStyles = data ? getRiskStyles(data.riskLevel || '') : getRiskStyles('');
 
   return (
     <div className="bg-slate-50 min-h-screen text-slate-700 font-sans">
@@ -115,12 +136,12 @@ export default function Dashboard({ onLogout, onNavigate }: DashboardProps) {
               {/* Left Column: Estado Actual */}
               <section className="xl:col-span-2 bg-white rounded-2xl shadow-lg shadow-slate-200/50 p-6 flex flex-col border border-slate-100">
                 <div className="flex justify-between items-start mb-6">
-                  <h3 className="text-lg font-bold text-slate-800">Estado de Estrés Académico</h3>
-                  <span className="px-3 py-1 bg-violet-100 text-violet-700 text-[10px] font-bold rounded-full uppercase tracking-wider">Nivel Moderado</span>
+                  <h3 className="text-lg font-bold text-slate-800">Alerta de Susceptibilidad Académica</h3>
+                  <span className={`px-3 py-1 ${riskStyles.badge} text-[10px] font-bold rounded-full uppercase tracking-wider`}>Nivel {data.riskLevel}</span>
                 </div>
                 
                 <div className="flex-1 flex flex-col items-center justify-center space-y-8">
-                  {/* Lavender Circular Progress Ring */}
+                  {/* Circular Progress Ring */}
                   <div className="relative inline-flex items-center justify-center my-4">
                     <svg className="w-48 h-48 transform -rotate-90">
                       <circle 
@@ -129,15 +150,15 @@ export default function Dashboard({ onLogout, onNavigate }: DashboardProps) {
                         fill="transparent" strokeWidth="12" 
                       />
                       <circle 
-                        className="text-violet-400 stroke-current progress-ring-circle transition-all duration-1000 ease-out" 
+                        className={`${riskStyles.ring} stroke-current progress-ring-circle transition-all duration-1000 ease-out`}
                         cx="96" cy="96" r="80" 
                         fill="transparent" strokeWidth="12" 
-                        strokeDasharray="502.4" strokeDashoffset="125.6" strokeLinecap="round" 
+                        strokeDasharray="502.4" strokeDashoffset={riskStyles.offset} strokeLinecap="round" 
                       />
                     </svg>
                     <div className="absolute flex flex-col items-center justify-center w-full h-full">
                       <span className="text-4xl font-black text-slate-800">{data.riskLevel}</span>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">Índice</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">Tamizaje</span>
                     </div>
                   </div>
                   
@@ -165,14 +186,14 @@ export default function Dashboard({ onLogout, onNavigate }: DashboardProps) {
                     <div className="p-1.5 bg-emerald-100 text-emerald-600 rounded-lg">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
                     </div>
-                    <h4 className="text-sm font-bold text-emerald-800">Sugerencias IA</h4>
+                    <h4 className="text-sm font-bold text-emerald-800">Sugerencias IA (Gemini)</h4>
                   </div>
                   <ul className="space-y-3">
                     {data.suggestions?.map((item, index) => (
                       <li key={index} className="flex items-start space-x-3">
                         <div className="mt-1 h-1.5 w-1.5 bg-emerald-400 rounded-full shrink-0"></div>
                         <p className="text-xs text-emerald-700 leading-relaxed">
-                          <b>{item.title}</b>: {item.description} <a className="underline font-bold ml-1" href={item.actionLink}>{item.actionText}</a>
+                          <b>{item.title}</b>: {item.description} <a className="underline font-bold ml-1" href={item.actionLink || '#'}>{item.actionText}</a>
                         </p>
                       </li>
                     ))}
@@ -200,7 +221,7 @@ export default function Dashboard({ onLogout, onNavigate }: DashboardProps) {
               <span className="text-[10px] font-medium text-slate-300">Conexión Segura con el Servidor API UNAYOE</span>
             </div>
             <div className="flex space-x-4">
-               <span className="text-[10px] font-medium text-slate-400">v1.4.2-stable</span>
+               <span className="text-[10px] font-medium text-slate-400">v2.0.0-gemini</span>
                <span className="text-[10px] font-medium text-slate-400 italic">"Mente sana en facultad preparada"</span>
             </div>
           </div>
