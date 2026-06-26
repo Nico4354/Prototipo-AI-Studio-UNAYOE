@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Sparkles, Lock, AlertTriangle } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Sparkles, Lock, AlertTriangle, ArrowLeft } from 'lucide-react';
 import type { DiagnosticoIA } from '../App';
 
 interface ProcessingModalProps {
@@ -7,20 +7,25 @@ interface ProcessingModalProps {
     stressLevel: string;
     sleepQuality: string;
     energyImpact: string;
+    symptoms?: string[];
+    symptomDuration?: string;
     observations: string;
   } | null;
   onComplete: (diagnostico: DiagnosticoIA) => void;
+  onRetry: () => void;
 }
 
-export default function ProcessingModal({ evaluationData, onComplete }: ProcessingModalProps) {
+export default function ProcessingModal({ evaluationData, onComplete, onRetry }: ProcessingModalProps) {
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('Preparando análisis...');
   const [error, setError] = useState<string | null>(null);
-  const hasCalledApi = useRef(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
-    if (hasCalledApi.current) return;
-    hasCalledApi.current = true;
+    setError(null);
+    setProgress(0);
+    setStatusText('Preparando análisis...');
+    let cancelled = false;
 
     // Animación de progreso gradual mientras se espera la respuesta de Gemini
     const progressSteps = [
@@ -31,25 +36,52 @@ export default function ProcessingModal({ evaluationData, onComplete }: Processi
       { delay: 4000, value: 72, text: 'Preparando sugerencias personalizadas...' },
     ];
 
-    const timers: NodeJS.Timeout[] = [];
+    const timers: ReturnType<typeof setTimeout>[] = [];
     progressSteps.forEach(({ delay, value, text }) => {
       timers.push(setTimeout(() => {
-        setProgress(prev => Math.max(prev, value));
-        setStatusText(text);
+        if (!cancelled) {
+          setProgress(prev => Math.max(prev, value));
+          setStatusText(text);
+        }
       }, delay));
     });
 
     // Llamada real a la API de evaluación
     const callApi = async () => {
       try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/evaluate`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(evaluationData),
-          }
-        );
+        // Enriquecer las observaciones con datos de síntomas para Gemini
+        const symptomsText = evaluationData?.symptoms?.length
+          ? `Síntomas reportados: ${evaluationData.symptoms.join('; ')}.`
+          : '';
+        const durationText = evaluationData?.symptomDuration
+          ? `Duración de los síntomas: ${evaluationData.symptomDuration}.`
+          : '';
+        const userObs = evaluationData?.observations || '';
+        const enrichedObservations = [symptomsText, durationText, userObs]
+          .filter(Boolean)
+          .join(' ') || 'Sin observaciones';
+
+        const apiPayload = {
+          stressLevel: evaluationData?.stressLevel || 'bajo',
+          sleepQuality: evaluationData?.sleepQuality || '7',
+          energyImpact: evaluationData?.energyImpact || 'Medio',
+          observations: enrichedObservations,
+        };
+
+        // Garantizar mínimo 2 segundos de progreso visual
+        const [response] = await Promise.all([
+          fetch(
+            `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/evaluate`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(apiPayload),
+            }
+          ),
+          new Promise(resolve => setTimeout(resolve, 2000)),
+        ]);
+
+        if (cancelled) return;
 
         const result = await response.json();
 
@@ -60,24 +92,31 @@ export default function ProcessingModal({ evaluationData, onComplete }: Processi
 
           // Esperar un momento en 100% antes de transicionar
           setTimeout(() => {
-            onComplete(result.diagnostico);
+            if (!cancelled) onComplete(result.diagnostico);
           }, 800);
         } else {
           throw new Error(result.message || 'Error desconocido en la evaluación');
         }
       } catch (err: any) {
-        console.error('Error en la evaluación:', err);
-        setError(err.message || 'No se pudo conectar con el servidor de análisis.');
-        setProgress(0);
+        if (!cancelled) {
+          console.error('Error en la evaluación:', err);
+          setError(err.message || 'No se pudo conectar con el servidor de análisis.');
+          setProgress(0);
+        }
       }
     };
 
     callApi();
 
     return () => {
+      cancelled = true;
       timers.forEach(clearTimeout);
     };
-  }, [evaluationData, onComplete]);
+  }, [retryCount]);
+
+  const handleRetryApi = () => {
+    setRetryCount(c => c + 1);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
@@ -119,12 +158,21 @@ export default function ProcessingModal({ evaluationData, onComplete }: Processi
             <p className="text-sm text-slate-500 mb-6 max-w-sm">
               {error}
             </p>
-            <button 
-              onClick={() => window.location.reload()}
-              className="px-6 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Reintentar
-            </button>
+            <div className="flex flex-col gap-3 w-full">
+              <button 
+                onClick={handleRetryApi}
+                className="w-full px-6 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Reintentar
+              </button>
+              <button 
+                onClick={onRetry}
+                className="w-full px-6 py-2.5 text-slate-500 text-sm font-bold rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Volver al formulario
+              </button>
+            </div>
           </>
         )}
         

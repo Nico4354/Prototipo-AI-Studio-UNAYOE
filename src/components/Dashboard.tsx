@@ -156,9 +156,11 @@ export default function Dashboard({ onLogout, onNavigate, aiDiagnostico }: Dashb
                         strokeDasharray="502.4" strokeDashoffset={riskStyles.offset} strokeLinecap="round" 
                       />
                     </svg>
-                    <div className="absolute flex flex-col items-center justify-center w-full h-full">
-                      <span className="text-4xl font-black text-slate-800">{data.riskLevel}</span>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">Tamizaje</span>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center px-4">
+                      <span className={`font-black text-slate-800 leading-tight text-center ${
+                        (data.riskLevel || '').length > 6 ? 'text-xl' : 'text-3xl'
+                      }`}>{data.riskLevel}</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase mt-1">Tamizaje</span>
                     </div>
                   </div>
                   

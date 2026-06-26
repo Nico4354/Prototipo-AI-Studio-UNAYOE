@@ -15,6 +15,8 @@ interface EvaluationData {
   stressLevel: string;
   sleepQuality: string;
   energyImpact: string;
+  symptoms: string[];
+  symptomDuration: string;
   observations: string;
 }
 
@@ -46,6 +48,8 @@ export default function App() {
     setAiDiagnostico(diagnostico);
     setCurrentView('dashboard');
   };
+  
+  const handleRetry = () => setCurrentView('evaluation');
   
   const handleLogout = () => {
     setCurrentView('login');
@@ -83,7 +87,8 @@ export default function App() {
           </div>
           <ProcessingModal 
             evaluationData={evaluationData}
-            onComplete={handleProcessingComplete} 
+            onComplete={handleProcessingComplete}
+            onRetry={handleRetry}
           />
         </>
       )}
