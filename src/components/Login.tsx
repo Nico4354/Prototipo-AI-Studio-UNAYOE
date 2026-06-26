@@ -24,13 +24,14 @@ export default function Login({ onLogin }: LoginProps) {
       const response = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: String(email), password: String(password) })
       });
       const data = await response.json();
       
       if (data.status === 'success') {
         onLogin(data.user);
       } else {
+        console.error(data.message || 'Error en login');
         setError(true);
       }
     } catch (err) {

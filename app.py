@@ -132,6 +132,7 @@ Genera exactamente 3 sugerencias personalizadas según los indicadores del estud
 def login():
     """Autenticación contra base de datos."""
     try:
+        print(f"Payload recibido en login: {request.json}")
         data = request.json or {}
         email = data.get('email', '')
         password = data.get('password', '')
@@ -148,7 +149,7 @@ def login():
             cursor.execute("SELECT * FROM estudiantes WHERE correo = %s", (email,))
             user = cursor.fetchone()
 
-            if user and user['password'] == password:
+            if user and str(user['password']) == str(password):
                 return jsonify({
                     'status': 'success',
                     'user': {
