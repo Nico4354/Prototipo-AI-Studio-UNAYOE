@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { LogIn, Brain, AlertCircle } from 'lucide-react';
 
+import { UserData } from '../App';
+
 interface LoginProps {
-  onLogin: () => void;
+  onLogin: (user: UserData) => void;
 }
 
 export default function Login({ onLogin }: LoginProps) {
@@ -25,7 +27,7 @@ export default function Login({ onLogin }: LoginProps) {
       const data = await response.json();
       
       if (data.status === 'success') {
-        onLogin();
+        onLogin(data.user);
       } else {
         setError(true);
       }
@@ -33,7 +35,7 @@ export default function Login({ onLogin }: LoginProps) {
       // Fallback for when backend is not running
       console.warn("Backend not reachable, proceeding with mock validation");
       if (email.includes('@unmsm.edu.pe') && password.length > 3) {
-        onLogin();
+        onLogin({ id: 1, name: 'Alex Rivera (Mock)', program: 'Ingeniería de Software' });
       } else {
         setError(true);
       }

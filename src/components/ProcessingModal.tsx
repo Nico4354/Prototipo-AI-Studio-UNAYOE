@@ -13,9 +13,10 @@ interface ProcessingModalProps {
   } | null;
   onComplete: (diagnostico: DiagnosticoIA) => void;
   onRetry: () => void;
+  estudianteId?: number;
 }
 
-export default function ProcessingModal({ evaluationData, onComplete, onRetry }: ProcessingModalProps) {
+export default function ProcessingModal({ evaluationData, onComplete, onRetry, estudianteId }: ProcessingModalProps) {
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('Preparando análisis...');
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +67,7 @@ export default function ProcessingModal({ evaluationData, onComplete, onRetry }:
           sleepQuality: evaluationData?.sleepQuality || '7',
           energyImpact: evaluationData?.energyImpact || 'Medio',
           observations: enrichedObservations,
+          estudiante_id: estudianteId,
         };
 
         // Garantizar mínimo 2 segundos de progreso visual
