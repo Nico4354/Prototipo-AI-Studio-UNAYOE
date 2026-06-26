@@ -34,13 +34,8 @@ export default function Login({ onLogin }: LoginProps) {
         setError(true);
       }
     } catch (err) {
-      // Fallback for when backend is not running
-      console.warn("Backend not reachable, proceeding with mock validation");
-      if (email.includes('@unmsm.edu.pe') && password.length > 3) {
-        onLogin({ id: 1, name: 'Alex Rivera (Mock)', program: 'Ingeniería de Software' });
-      } else {
-        setError(true);
-      }
+      console.error("Error connecting to backend:", err);
+      setError(true);
     } finally {
       setLoading(false);
     }

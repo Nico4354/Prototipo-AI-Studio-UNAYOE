@@ -76,6 +76,14 @@ def ensure_default_student():
         if conn.is_connected():
             cursor.close()
             conn.close()
+_db_initialized = False
+
+@app.before_request
+def initialize_db():
+    global _db_initialized
+    if not _db_initialized:
+        ensure_default_student()
+        _db_initialized = True
 
 # ---------------------------------------------------------------------------
 # Prompt de tamizaje GAD-7 para Gemini
