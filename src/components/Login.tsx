@@ -26,16 +26,26 @@ export default function Login({ onLogin }: LoginProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: String(email), password: String(password) })
       });
-      const data = await response.json();
+
+      // Primero obtenemos el texto crudo para evitar crasheos si el backend no devuelve JSON
+      const text = await response.text();
+      let data;
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (e) {
+        console.error("Backend devolvió una respuesta que no es JSON:", text, "Status:", response.status);
+        setError(true);
+        return;
+      }
       
       if (data.status === 'success') {
         onLogin(data.user);
       } else {
-        console.error(data.message || 'Error en login');
+        console.error(data.message || `Error en login. Status HTTP: ${response.status}`);
         setError(true);
       }
     } catch (err) {
-      console.error("Error connecting to backend:", err);
+      console.error("Error de red o CORS connecting to backend:", err);
       setError(true);
     } finally {
       setLoading(false);
