@@ -15,7 +15,6 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 import mysql.connector
 from mysql.connector import Error
-from werkzeug.security import generate_password_hash, check_password_hash
 
 # Cargar variables de entorno desde .env (desarrollo local)
 load_dotenv()
@@ -51,22 +50,25 @@ def get_db_connection():
         return None
 
 def ensure_default_student():
-    """Garantiza que exista un estudiante de prueba en la base de datos."""
+    """Garantiza que exista un estudiante de prueba en la base de datos y en texto plano."""
     conn = get_db_connection()
     if not conn:
         return 1
     
     try:
         cursor = conn.cursor(dictionary=True)
+        # Fix existing hashed password
+        cursor.execute("UPDATE estudiantes SET password = '123456' WHERE correo = 'alex.rivera@unmsm.edu.pe'")
+        conn.commit()
+
         cursor.execute("SELECT id FROM estudiantes WHERE correo = %s", ('alex.rivera@unmsm.edu.pe',))
         student = cursor.fetchone()
         
         if student:
             return student['id']
             
-        hashed_pw = generate_password_hash('123456')
         insert_query = "INSERT INTO estudiantes (nombre, correo, programa_academico, password) VALUES (%s, %s, %s, %s)"
-        cursor.execute(insert_query, ('Alex Rivera', 'alex.rivera@unmsm.edu.pe', 'Ingeniería de Software', hashed_pw))
+        cursor.execute(insert_query, ('Alex Rivera', 'alex.rivera@unmsm.edu.pe', 'Ingeniería de Software', '123456'))
         conn.commit()
         return cursor.lastrowid
     except Error as e:
@@ -129,40 +131,42 @@ Genera exactamente 3 sugerencias personalizadas según los indicadores del estud
 @app.route('/api/login', methods=['POST'])
 def login():
     """Autenticación contra base de datos."""
-    data = request.json
-    email = data.get('email', '')
-    password = data.get('password', '')
-
-    if not email or not password:
-        return jsonify({'status': 'error', 'message': 'Credenciales incompletas'}), 400
-
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({'status': 'error', 'message': 'Error de conexión a la base de datos'}), 500
-
     try:
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM estudiantes WHERE correo = %s", (email,))
-        user = cursor.fetchone()
+        print(f"Payload recibido en login: {request.json}")
+        data = request.json or {}
+        email = data.get('email', '')
+        password = data.get('password', '')
 
-        if user and check_password_hash(user['password'], password):
-            return jsonify({
-                'status': 'success',
-                'user': {
-                    'id': user['id'],
-                    'name': user['nombre'],
-                    'program': user['programa_academico']
-                }
-            })
-        else:
-            return jsonify({'status': 'error', 'message': 'Credenciales incorrectas'}), 401
-    except Error as e:
-        print(f"Error en login: {e}")
-        return jsonify({'status': 'error', 'message': 'Error interno'}), 500
-    finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        if not email or not password:
+            return jsonify({'status': 'error', 'message': 'Credenciales incompletas'}), 400
+
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'status': 'error', 'message': 'Error de conexión a la base de datos'}), 500
+
+        try:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM estudiantes WHERE correo = %s", (email,))
+            user = cursor.fetchone()
+
+            if user and str(user['password']) == str(password):
+                return jsonify({
+                    'status': 'success',
+                    'user': {
+                        'id': user['id'],
+                        'name': user['nombre'],
+                        'program': user['programa_academico']
+                    }
+                })
+            else:
+                return jsonify({'status': 'error', 'message': 'Credenciales incorrectas'}), 401
+        finally:
+            if conn.is_connected():
+                cursor.close()
+                conn.close()
+    except Exception as e:
+        print(f"Error global en login: {e}")
+        return jsonify({'error': str(e), 'status': 'error'}), 500
 
 
 @app.route('/api/evaluate', methods=['POST'])
@@ -173,37 +177,37 @@ def evaluate():
     para obtener una alerta de susceptibilidad basada en GAD-7.
     """
     global _ultimo_diagnostico
-    data = request.json
-
-    nivel_estres = data.get('stressLevel', 'bajo')
-    horas_sueno = data.get('sleepQuality', '7')
-    impacto_energia = data.get('energyImpact', 'Medio')
-    observaciones = data.get('observations', 'Sin observaciones')
-    estudiante_id = data.get('estudiante_id')
-    
-    if not estudiante_id:
-        return jsonify({'status': 'error', 'message': 'Falta estudiante_id'}), 400
-
-    # Mapeo a numéricos para BD
-    map_estres = {'bajo': 3, 'moderado': 6, 'alto': 9}
-    nivel_estres_num = map_estres.get(nivel_estres.lower(), 5)
-    
     try:
-        horas_sueno_num = float(horas_sueno)
-    except ValueError:
-        horas_sueno_num = 7.0
+        data = request.json or {}
+
+        nivel_estres = data.get('stressLevel', 'bajo')
+        horas_sueno = data.get('sleepQuality', '7')
+        impacto_energia = data.get('energyImpact', 'Medio')
+        observaciones = data.get('observations', 'Sin observaciones')
+        estudiante_id = data.get('estudiante_id')
         
-    map_energia = {'Nulo': 1, 'Medio': 5, 'Severo': 9}
-    impacto_energia_num = map_energia.get(impacto_energia, 5)
+        if not estudiante_id:
+            return jsonify({'status': 'error', 'message': 'Falta estudiante_id'}), 400
 
-    # Verificar que Gemini está configurado
-    if not GEMINI_API_KEY:
-        return jsonify({
-            'status': 'error',
-            'message': 'GEMINI_API_KEY no configurada en el servidor.'
-        }), 500
+        # Mapeo a numéricos para BD
+        map_estres = {'bajo': 3, 'moderado': 6, 'alto': 9}
+        nivel_estres_num = map_estres.get(nivel_estres.lower(), 5)
+        
+        try:
+            horas_sueno_num = float(horas_sueno)
+        except ValueError:
+            horas_sueno_num = 7.0
+            
+        map_energia = {'Nulo': 1, 'Medio': 5, 'Severo': 9}
+        impacto_energia_num = map_energia.get(impacto_energia, 5)
 
-    try:
+        # Verificar que Gemini está configurado
+        if not GEMINI_API_KEY:
+            return jsonify({
+                'status': 'error',
+                'message': 'GEMINI_API_KEY no configurada en el servidor.'
+            }), 500
+
         # Construir el prompt con los datos del estudiante
         prompt = PROMPT_TAMIZAJE.format(
             nivel_estres=nivel_estres,
@@ -228,7 +232,14 @@ def evaluate():
             response_text = response_text[:-3]
         response_text = response_text.strip()
 
-        diagnostico = json.loads(response_text)
+        try:
+            diagnostico = json.loads(response_text)
+        except json.JSONDecodeError:
+            return jsonify({
+                'status': 'error',
+                'message': 'Error al interpretar la respuesta del análisis de IA. Intenta nuevamente.',
+                'error': 'JSONDecodeError'
+            }), 500
 
         # Validar estructura mínima
         if 'nivel_riesgo' not in diagnostico:
@@ -262,8 +273,6 @@ def evaluate():
                 ))
                 
                 conn.commit()
-            except Error as e:
-                print(f"Error guardando en BD: {e}")
             finally:
                 if conn.is_connected():
                     cursor.close()
@@ -277,128 +286,124 @@ def evaluate():
             'diagnostico': diagnostico
         })
 
-    except json.JSONDecodeError as e:
-        return jsonify({
-            'status': 'error',
-            'message': 'Error al interpretar la respuesta del análisis de IA. Intenta nuevamente.'
-        }), 500
     except Exception as e:
-        return jsonify({
-            'status': 'error',
-            'message': f'Error en el análisis de IA: {str(e)}'
-        }), 500
+        print(f"Error global en evaluate: {e}")
+        return jsonify({'error': str(e), 'status': 'error'}), 500
 
 
 @app.route('/api/dashboard', methods=['GET'])
 def dashboard():
     """Devuelve los datos del último análisis de IA de la base de datos."""
-    estudiante_id = request.args.get('estudiante_id')
-    if not estudiante_id:
-        return jsonify({'status': 'error', 'message': 'Falta estudiante_id'}), 400
-
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({'status': 'error', 'message': 'Error BD'}), 500
-
     try:
-        cursor = conn.cursor(dictionary=True)
-        query = """
-            SELECT d.nivel_riesgo, d.descripcion_riesgo, d.sugerencias_json 
-            FROM diagnosticos_ia d
-            JOIN evaluaciones e ON d.evaluacion_id = e.id
-            WHERE e.estudiante_id = %s
-            ORDER BY e.id DESC LIMIT 1
-        """
-        cursor.execute(query, (estudiante_id,))
-        record = cursor.fetchone()
+        estudiante_id = request.args.get('estudiante_id')
+        if not estudiante_id:
+            return jsonify({'status': 'error', 'message': 'Falta estudiante_id'}), 400
 
-        if record:
-            sugerencias = []
-            try:
-                sugerencias = json.loads(record['sugerencias_json'])
-            except:
-                pass
-            
-            return jsonify({
-                'status': 'success',
-                'riskLevel': record['nivel_riesgo'],
-                'riskDescription': record['descripcion_riesgo'],
-                'suggestions': sugerencias
-            })
-    except Error as e:
-        print(f"Error fetching dashboard: {e}")
-    finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'status': 'error', 'message': 'Error BD'}), 500
 
-    # Fallback si no hay evaluación previa
-    return jsonify({
-        'status': 'success',
-        'riskLevel': 'Sin evaluar',
-        'riskDescription': 'Aún no has completado tu primera evaluación de bienestar. Completa el formulario para recibir tu alerta de susceptibilidad.',
-        'suggestions': [
-            {
-                'title': 'Completa tu primera evaluación',
-                'description': 'Responde las preguntas de bienestar para recibir recomendaciones personalizadas.',
-                'actionText': 'Ir a evaluación',
-                'icon': 'User'
-            }
-        ]
-    })
+        try:
+            cursor = conn.cursor(dictionary=True)
+            query = """
+                SELECT d.nivel_riesgo, d.descripcion_riesgo, d.sugerencias_json 
+                FROM diagnosticos_ia d
+                JOIN evaluaciones e ON d.evaluacion_id = e.id
+                WHERE e.estudiante_id = %s
+                ORDER BY e.id DESC LIMIT 1
+            """
+            cursor.execute(query, (estudiante_id,))
+            record = cursor.fetchone()
+
+            if record:
+                sugerencias = []
+                try:
+                    sugerencias = json.loads(record['sugerencias_json'])
+                except:
+                    pass
+                
+                return jsonify({
+                    'status': 'success',
+                    'riskLevel': record['nivel_riesgo'],
+                    'riskDescription': record['descripcion_riesgo'],
+                    'suggestions': sugerencias
+                })
+        finally:
+            if conn.is_connected():
+                cursor.close()
+                conn.close()
+
+        # Fallback si no hay evaluación previa
+        return jsonify({
+            'status': 'success',
+            'riskLevel': 'Sin evaluar',
+            'riskDescription': 'Aún no has completado tu primera evaluación de bienestar. Completa el formulario para recibir tu alerta de susceptibilidad.',
+            'suggestions': [
+                {
+                    'title': 'Completa tu primera evaluación',
+                    'description': 'Responde las preguntas de bienestar para recibir recomendaciones personalizadas.',
+                    'actionText': 'Ir a evaluación',
+                    'icon': 'User'
+                }
+            ]
+        })
+    except Exception as e:
+        print(f"Error global en dashboard: {e}")
+        return jsonify({'error': str(e), 'status': 'error'}), 500
 
 
 @app.route('/api/history', methods=['GET'])
 def history():
     """Historial de evaluaciones desde BD."""
-    estudiante_id = request.args.get('estudiante_id')
-    if not estudiante_id:
-        return jsonify({'status': 'error', 'message': 'Falta estudiante_id'}), 400
-        
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({'status': 'error', 'message': 'Error BD'}), 500
-
     try:
-        cursor = conn.cursor(dictionary=True)
-        query = """
-            SELECT e.id, e.observaciones, d.nivel_riesgo, e.fecha_creacion
-            FROM evaluaciones e
-            LEFT JOIN diagnosticos_ia d ON e.id = d.evaluacion_id
-            WHERE e.estudiante_id = %s
-            ORDER BY e.id DESC
-        """
-        cursor.execute(query, (estudiante_id,))
-        rows = cursor.fetchall()
+        estudiante_id = request.args.get('estudiante_id')
+        if not estudiante_id:
+            return jsonify({'status': 'error', 'message': 'Falta estudiante_id'}), 400
+            
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'status': 'error', 'message': 'Error BD'}), 500
 
-        records = []
-        for r in rows:
-            color = 'emerald'
-            if r['nivel_riesgo'] == 'Moderado': color = 'orange'
-            elif r['nivel_riesgo'] in ['Elevado', 'Crítico']: color = 'rose'
-            
-            # Formatear la fecha si existe, asumiendo que fecha_creacion puede ser un datetime
-            fecha_str = r['fecha_creacion'].strftime("%d %b %Y") if r.get('fecha_creacion') else 'Reciente'
-            
-            records.append({
-                'id': str(r['id']),
-                'date': fecha_str,
-                'riskLevel': r['nivel_riesgo'] or 'Pendiente',
-                'riskColor': color,
-                'summary': r['observaciones'] or 'Evaluación sin observaciones adicionales'
+        try:
+            cursor = conn.cursor(dictionary=True)
+            query = """
+                SELECT e.id, e.observaciones, d.nivel_riesgo, e.fecha_creacion
+                FROM evaluaciones e
+                LEFT JOIN diagnosticos_ia d ON e.id = d.evaluacion_id
+                WHERE e.estudiante_id = %s
+                ORDER BY e.id DESC
+            """
+            cursor.execute(query, (estudiante_id,))
+            rows = cursor.fetchall()
+
+            records = []
+            for r in rows:
+                color = 'emerald'
+                if r['nivel_riesgo'] == 'Moderado': color = 'orange'
+                elif r['nivel_riesgo'] in ['Elevado', 'Crítico']: color = 'rose'
+                
+                # Formatear la fecha si existe, asumiendo que fecha_creacion puede ser un datetime
+                fecha_str = r['fecha_creacion'].strftime("%d %b %Y") if r.get('fecha_creacion') else 'Reciente'
+                
+                records.append({
+                    'id': str(r['id']),
+                    'date': fecha_str,
+                    'riskLevel': r['nivel_riesgo'] or 'Pendiente',
+                    'riskColor': color,
+                    'summary': r['observaciones'] or 'Evaluación sin observaciones adicionales'
+                })
+                
+            return jsonify({
+                'status': 'success',
+                'records': records
             })
-            
-        return jsonify({
-            'status': 'success',
-            'records': records
-        })
-    except Error as e:
-        print(f"Error fetching history: {e}")
-        return jsonify({'status': 'error', 'message': 'Error interno fetching history'}), 500
-    finally:
-        if conn.is_connected():
-            cursor.close()
-            conn.close()
+        finally:
+            if conn.is_connected():
+                cursor.close()
+                conn.close()
+    except Exception as e:
+        print(f"Error global en history: {e}")
+        return jsonify({'error': str(e), 'status': 'error'}), 500
 
 
 @app.route('/api/resources', methods=['GET'])
@@ -474,6 +479,12 @@ def settings():
             'message': 'Configuración actualizada'
         })
 
+
+try:
+    print("Inicializando base de datos (texto plano)...")
+    ensure_default_student()
+except Exception as e:
+    print(f"Error al inicializar la BD: {e}")
 
 if __name__ == '__main__':
     print("Iniciando UNAYOE FISI Backend en http://0.0.0.0:5000")

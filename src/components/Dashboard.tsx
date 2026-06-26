@@ -37,6 +37,8 @@ interface DashboardData {
 export default function Dashboard({ onLogout, onNavigate, aiDiagnostico, estudianteId }: DashboardProps) {
   const [data, setData] = useState<DashboardData | null>(null);
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
   useEffect(() => {
     // Si recibimos datos reales de la IA, usarlos directamente
     if (aiDiagnostico) {
@@ -51,7 +53,7 @@ export default function Dashboard({ onLogout, onNavigate, aiDiagnostico, estudia
     // Fallback: intentar cargar desde el backend
     const fetchData = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/dashboard?estudiante_id=${estudianteId || 1}`);
+        const response = await fetch(`${API_URL}/api/dashboard?estudiante_id=${estudianteId || 1}`);
         const result = await response.json();
         setData(result);
       } catch (err) {

@@ -13,32 +13,40 @@ export default function Login({ onLogin }: LoginProps) {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(false);
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/login`, {
+      const response = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: String(email), password: String(password) })
       });
-      const data = await response.json();
+
+      // Primero obtenemos el texto crudo para evitar crasheos si el backend no devuelve JSON
+      const text = await response.text();
+      let data;
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (e) {
+        console.error("Backend devolvió una respuesta que no es JSON:", text, "Status:", response.status);
+        setError(true);
+        return;
+      }
       
       if (data.status === 'success') {
         onLogin(data.user);
       } else {
+        console.error(data.message || `Error en login. Status HTTP: ${response.status}`);
         setError(true);
       }
     } catch (err) {
-      // Fallback for when backend is not running
-      console.warn("Backend not reachable, proceeding with mock validation");
-      if (email.includes('@unmsm.edu.pe') && password.length > 3) {
-        onLogin({ id: 1, name: 'Alex Rivera (Mock)', program: 'Ingeniería de Software' });
-      } else {
-        setError(true);
-      }
+      console.error("Error de red o CORS connecting to backend:", err);
+      setError(true);
     } finally {
       setLoading(false);
     }

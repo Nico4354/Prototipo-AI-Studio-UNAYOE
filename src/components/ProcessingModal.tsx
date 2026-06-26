@@ -22,6 +22,8 @@ export default function ProcessingModal({ evaluationData, onComplete, onRetry, e
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
   useEffect(() => {
     setError(null);
     setProgress(0);
@@ -73,7 +75,7 @@ export default function ProcessingModal({ evaluationData, onComplete, onRetry, e
         // Garantizar mínimo 2 segundos de progreso visual
         const [response] = await Promise.all([
           fetch(
-            `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/evaluate`,
+            `${API_URL}/api/evaluate`,
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
