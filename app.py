@@ -15,7 +15,6 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 import mysql.connector
 from mysql.connector import Error
-from werkzeug.security import generate_password_hash, check_password_hash
 
 # Cargar variables de entorno desde .env (desarrollo local)
 load_dotenv()
@@ -51,22 +50,25 @@ def get_db_connection():
         return None
 
 def ensure_default_student():
-    """Garantiza que exista un estudiante de prueba en la base de datos."""
+    """Garantiza que exista un estudiante de prueba en la base de datos y en texto plano."""
     conn = get_db_connection()
     if not conn:
         return 1
     
     try:
         cursor = conn.cursor(dictionary=True)
+        # Fix existing hashed password
+        cursor.execute("UPDATE estudiantes SET password = '123456' WHERE correo = 'alex.rivera@unmsm.edu.pe'")
+        conn.commit()
+
         cursor.execute("SELECT id FROM estudiantes WHERE correo = %s", ('alex.rivera@unmsm.edu.pe',))
         student = cursor.fetchone()
         
         if student:
             return student['id']
             
-        hashed_pw = generate_password_hash('123456')
         insert_query = "INSERT INTO estudiantes (nombre, correo, programa_academico, password) VALUES (%s, %s, %s, %s)"
-        cursor.execute(insert_query, ('Alex Rivera', 'alex.rivera@unmsm.edu.pe', 'Ingeniería de Software', hashed_pw))
+        cursor.execute(insert_query, ('Alex Rivera', 'alex.rivera@unmsm.edu.pe', 'Ingeniería de Software', '123456'))
         conn.commit()
         return cursor.lastrowid
     except Error as e:
@@ -76,14 +78,6 @@ def ensure_default_student():
         if conn.is_connected():
             cursor.close()
             conn.close()
-_db_initialized = False
-
-@app.before_request
-def initialize_db():
-    global _db_initialized
-    if not _db_initialized:
-        ensure_default_student()
-        _db_initialized = True
 
 # ---------------------------------------------------------------------------
 # Prompt de tamizaje GAD-7 para Gemini
@@ -154,7 +148,7 @@ def login():
             cursor.execute("SELECT * FROM estudiantes WHERE correo = %s", (email,))
             user = cursor.fetchone()
 
-            if user and check_password_hash(user['password'], password):
+            if user and user['password'] == password:
                 return jsonify({
                     'status': 'success',
                     'user': {
@@ -484,6 +478,12 @@ def settings():
             'message': 'Configuración actualizada'
         })
 
+
+try:
+    print("Inicializando base de datos (texto plano)...")
+    ensure_default_student()
+except Exception as e:
+    print(f"Error al inicializar la BD: {e}")
 
 if __name__ == '__main__':
     print("Iniciando UNAYOE FISI Backend en http://0.0.0.0:5000")
