@@ -5,6 +5,7 @@ import Sidebar from './Sidebar';
 interface ClinicalHistoryProps {
   onLogout: () => void;
   onNavigate: (view: string) => void;
+  estudianteId?: number;
 }
 
 interface HistoryRecord {
@@ -15,14 +16,16 @@ interface HistoryRecord {
   summary: string;
 }
 
-export default function ClinicalHistory({ onLogout, onNavigate }: ClinicalHistoryProps) {
+export default function ClinicalHistory({ onLogout, onNavigate, estudianteId }: ClinicalHistoryProps) {
   const [records, setRecords] = useState<HistoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000');
 
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/history`);
+        const response = await fetch(`${API_URL}/api/history?estudiante_id=${estudianteId || 1}`);
         const data = await response.json();
         if (data.status === 'success') {
           setRecords(data.records);
@@ -58,7 +61,7 @@ export default function ClinicalHistory({ onLogout, onNavigate }: ClinicalHistor
     };
     
     fetchHistory();
-  }, []);
+  }, [estudianteId]);
 
   const getColorClasses = (color: string) => {
     switch(color) {

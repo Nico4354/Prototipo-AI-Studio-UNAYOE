@@ -13,13 +13,16 @@ interface ProcessingModalProps {
   } | null;
   onComplete: (diagnostico: DiagnosticoIA) => void;
   onRetry: () => void;
+  estudianteId?: number;
 }
 
-export default function ProcessingModal({ evaluationData, onComplete, onRetry }: ProcessingModalProps) {
+export default function ProcessingModal({ evaluationData, onComplete, onRetry, estudianteId }: ProcessingModalProps) {
   const [progress, setProgress] = useState(0);
   const [statusText, setStatusText] = useState('Preparando análisis...');
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+
+  const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000');
 
   useEffect(() => {
     setError(null);
@@ -66,12 +69,13 @@ export default function ProcessingModal({ evaluationData, onComplete, onRetry }:
           sleepQuality: evaluationData?.sleepQuality || '7',
           energyImpact: evaluationData?.energyImpact || 'Medio',
           observations: enrichedObservations,
+          estudiante_id: estudianteId,
         };
 
         // Garantizar mínimo 2 segundos de progreso visual
         const [response] = await Promise.all([
           fetch(
-            `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/evaluate`,
+            `${API_URL}/api/evaluate`,
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },

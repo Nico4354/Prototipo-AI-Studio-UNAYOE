@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { LogIn, Brain, AlertCircle } from 'lucide-react';
 
+import { UserData } from '../App';
+
 interface LoginProps {
-  onLogin: () => void;
+  onLogin: (user: UserData) => void;
 }
 
 export default function Login({ onLogin }: LoginProps) {
@@ -11,13 +13,15 @@ export default function Login({ onLogin }: LoginProps) {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000');
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(false);
     
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/login`, {
+      const response = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -25,7 +29,7 @@ export default function Login({ onLogin }: LoginProps) {
       const data = await response.json();
       
       if (data.status === 'success') {
-        onLogin();
+        onLogin(data.user);
       } else {
         setError(true);
       }
@@ -33,7 +37,7 @@ export default function Login({ onLogin }: LoginProps) {
       // Fallback for when backend is not running
       console.warn("Backend not reachable, proceeding with mock validation");
       if (email.includes('@unmsm.edu.pe') && password.length > 3) {
-        onLogin();
+        onLogin({ id: 1, name: 'Alex Rivera (Mock)', program: 'Ingeniería de Software' });
       } else {
         setError(true);
       }

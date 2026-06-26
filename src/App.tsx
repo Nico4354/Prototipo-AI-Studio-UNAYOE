@@ -10,6 +10,12 @@ import Settings from './components/Settings';
 
 type ViewState = 'login' | 'evaluation' | 'processing' | 'dashboard' | 'history' | 'resources' | 'support' | 'settings';
 
+export interface UserData {
+  id: number;
+  name: string;
+  program: string;
+}
+
 // Tipos para los datos de evaluación y diagnóstico IA
 interface EvaluationData {
   stressLevel: string;
@@ -35,9 +41,13 @@ export default function App() {
   const [currentView, setCurrentView] = useState<ViewState>('login');
   const [evaluationData, setEvaluationData] = useState<EvaluationData | null>(null);
   const [aiDiagnostico, setAiDiagnostico] = useState<DiagnosticoIA | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   
   // Handlers for state transitions
-  const handleLoginSuccess = () => setCurrentView('evaluation');
+  const handleLoginSuccess = (userData: UserData) => {
+    setUser(userData);
+    setCurrentView('evaluation');
+  };
   
   const handleEvaluationSubmit = (data: EvaluationData) => {
     setEvaluationData(data);
@@ -55,6 +65,7 @@ export default function App() {
     setCurrentView('login');
     setEvaluationData(null);
     setAiDiagnostico(null);
+    setUser(null);
   };
   
   const handleNavigate = (view: string) => {
@@ -89,6 +100,7 @@ export default function App() {
             evaluationData={evaluationData}
             onComplete={handleProcessingComplete}
             onRetry={handleRetry}
+            estudianteId={user?.id}
           />
         </>
       )}
@@ -98,6 +110,7 @@ export default function App() {
           onLogout={handleLogout} 
           onNavigate={handleNavigate}
           aiDiagnostico={aiDiagnostico}
+          estudianteId={user?.id}
         />
       )}
 
@@ -105,6 +118,7 @@ export default function App() {
         <ClinicalHistory
           onLogout={handleLogout}
           onNavigate={handleNavigate}
+          estudianteId={user?.id}
         />
       )}
 

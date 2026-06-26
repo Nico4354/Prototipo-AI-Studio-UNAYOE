@@ -18,6 +18,7 @@ interface DashboardProps {
   onLogout: () => void;
   onNavigate: (view: string) => void;
   aiDiagnostico?: DiagnosticoIA | null;
+  estudianteId?: number;
 }
 
 interface DashboardData {
@@ -33,8 +34,10 @@ interface DashboardData {
   }[];
 }
 
-export default function Dashboard({ onLogout, onNavigate, aiDiagnostico }: DashboardProps) {
+export default function Dashboard({ onLogout, onNavigate, aiDiagnostico, estudianteId }: DashboardProps) {
   const [data, setData] = useState<DashboardData | null>(null);
+
+  const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000');
 
   useEffect(() => {
     // Si recibimos datos reales de la IA, usarlos directamente
@@ -50,7 +53,7 @@ export default function Dashboard({ onLogout, onNavigate, aiDiagnostico }: Dashb
     // Fallback: intentar cargar desde el backend
     const fetchData = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/dashboard`);
+        const response = await fetch(`${API_URL}/api/dashboard?estudiante_id=${estudianteId || 1}`);
         const result = await response.json();
         setData(result);
       } catch (err) {
@@ -72,7 +75,7 @@ export default function Dashboard({ onLogout, onNavigate, aiDiagnostico }: Dashb
     };
     
     fetchData();
-  }, [aiDiagnostico]);
+  }, [aiDiagnostico, estudianteId]);
 
   // Determinar colores según nivel de riesgo
   const getRiskStyles = (level: string) => {

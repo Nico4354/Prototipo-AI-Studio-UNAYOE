@@ -15,6 +15,7 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 import mysql.connector
 from mysql.connector import Error
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # Cargar variables de entorno desde .env (desarrollo local)
 load_dotenv()
@@ -63,8 +64,9 @@ def ensure_default_student():
         if student:
             return student['id']
             
+        hashed_pw = generate_password_hash('123456')
         insert_query = "INSERT INTO estudiantes (nombre, correo, programa_academico, password) VALUES (%s, %s, %s, %s)"
-        cursor.execute(insert_query, ('Alex Rivera', 'alex.rivera@unmsm.edu.pe', 'Ingeniería de Software', '123456'))
+        cursor.execute(insert_query, ('Alex Rivera', 'alex.rivera@unmsm.edu.pe', 'Ingeniería de Software', hashed_pw))
         conn.commit()
         return cursor.lastrowid
     except Error as e:
@@ -126,25 +128,41 @@ Genera exactamente 3 sugerencias personalizadas según los indicadores del estud
 
 @app.route('/api/login', methods=['POST'])
 def login():
-    """Autenticación mock para el prototipo."""
+    """Autenticación contra base de datos."""
     data = request.json
     email = data.get('email', '')
     password = data.get('password', '')
 
-    # Validación mock simple
-    if email and password:
-        return jsonify({
-            'status': 'success',
-            'user': {
-                'name': 'Alex Rivera',
-                'program': 'Ingeniería de Software'
-            }
-        })
-    else:
-        return jsonify({
-            'status': 'error',
-            'message': 'Credenciales incompletas'
-        }), 400
+    if not email or not password:
+        return jsonify({'status': 'error', 'message': 'Credenciales incompletas'}), 400
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'status': 'error', 'message': 'Error de conexión a la base de datos'}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM estudiantes WHERE correo = %s", (email,))
+        user = cursor.fetchone()
+
+        if user and check_password_hash(user['password'], password):
+            return jsonify({
+                'status': 'success',
+                'user': {
+                    'id': user['id'],
+                    'name': user['nombre'],
+                    'program': user['programa_academico']
+                }
+            })
+        else:
+            return jsonify({'status': 'error', 'message': 'Credenciales incorrectas'}), 401
+    except Error as e:
+        print(f"Error en login: {e}")
+        return jsonify({'status': 'error', 'message': 'Error interno'}), 500
+    finally:
+        if conn.is_connected():
+            cursor.close()
+            conn.close()
 
 
 @app.route('/api/evaluate', methods=['POST'])
@@ -161,6 +179,10 @@ def evaluate():
     horas_sueno = data.get('sleepQuality', '7')
     impacto_energia = data.get('energyImpact', 'Medio')
     observaciones = data.get('observations', 'Sin observaciones')
+    estudiante_id = data.get('estudiante_id')
+    
+    if not estudiante_id:
+        return jsonify({'status': 'error', 'message': 'Falta estudiante_id'}), 400
 
     # Mapeo a numéricos para BD
     map_estres = {'bajo': 3, 'moderado': 6, 'alto': 9}
@@ -215,7 +237,6 @@ def evaluate():
         # -------------------------------------------------------------
         # Guardar en Base de Datos MySQL
         # -------------------------------------------------------------
-        estudiante_id = ensure_default_student()
         conn = get_db_connection()
         if conn:
             try:
@@ -270,17 +291,46 @@ def evaluate():
 
 @app.route('/api/dashboard', methods=['GET'])
 def dashboard():
-    """
-    Devuelve los datos del último análisis de IA.
-    Si no hay análisis previo, devuelve datos por defecto.
-    """
-    if _ultimo_diagnostico:
-        return jsonify({
-            'status': 'success',
-            'riskLevel': _ultimo_diagnostico.get('nivel_riesgo', 'Sin evaluar'),
-            'riskDescription': _ultimo_diagnostico.get('descripcion_riesgo', ''),
-            'suggestions': _ultimo_diagnostico.get('sugerencias', [])
-        })
+    """Devuelve los datos del último análisis de IA de la base de datos."""
+    estudiante_id = request.args.get('estudiante_id')
+    if not estudiante_id:
+        return jsonify({'status': 'error', 'message': 'Falta estudiante_id'}), 400
+
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'status': 'error', 'message': 'Error BD'}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        query = """
+            SELECT d.nivel_riesgo, d.descripcion_riesgo, d.sugerencias_json 
+            FROM diagnosticos_ia d
+            JOIN evaluaciones e ON d.evaluacion_id = e.id
+            WHERE e.estudiante_id = %s
+            ORDER BY e.id DESC LIMIT 1
+        """
+        cursor.execute(query, (estudiante_id,))
+        record = cursor.fetchone()
+
+        if record:
+            sugerencias = []
+            try:
+                sugerencias = json.loads(record['sugerencias_json'])
+            except:
+                pass
+            
+            return jsonify({
+                'status': 'success',
+                'riskLevel': record['nivel_riesgo'],
+                'riskDescription': record['descripcion_riesgo'],
+                'suggestions': sugerencias
+            })
+    except Error as e:
+        print(f"Error fetching dashboard: {e}")
+    finally:
+        if conn.is_connected():
+            cursor.close()
+            conn.close()
 
     # Fallback si no hay evaluación previa
     return jsonify({
@@ -300,33 +350,55 @@ def dashboard():
 
 @app.route('/api/history', methods=['GET'])
 def history():
-    """Historial de evaluaciones (mock para prototipo)."""
-    return jsonify({
-        'status': 'success',
-        'records': [
-            {
-                'id': '1',
-                'date': '15 May 2026',
-                'riskLevel': 'Moderado',
-                'riskColor': 'orange',
-                'summary': 'Tensión constante por exámenes parciales.'
-            },
-            {
-                'id': '2',
-                'date': '10 Abr 2026',
-                'riskLevel': 'Bajo',
-                'riskColor': 'emerald',
-                'summary': 'Manejo adecuado de prácticas y laboratorios.'
-            },
-            {
-                'id': '3',
-                'date': '12 Mar 2026',
-                'riskLevel': 'Alto',
-                'riskColor': 'rose',
-                'summary': 'Abrumado, dificultad para concentrarse en clases.'
-            }
-        ]
-    })
+    """Historial de evaluaciones desde BD."""
+    estudiante_id = request.args.get('estudiante_id')
+    if not estudiante_id:
+        return jsonify({'status': 'error', 'message': 'Falta estudiante_id'}), 400
+        
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'status': 'error', 'message': 'Error BD'}), 500
+
+    try:
+        cursor = conn.cursor(dictionary=True)
+        query = """
+            SELECT e.id, e.observaciones, d.nivel_riesgo, e.fecha_creacion
+            FROM evaluaciones e
+            LEFT JOIN diagnosticos_ia d ON e.id = d.evaluacion_id
+            WHERE e.estudiante_id = %s
+            ORDER BY e.id DESC
+        """
+        cursor.execute(query, (estudiante_id,))
+        rows = cursor.fetchall()
+
+        records = []
+        for r in rows:
+            color = 'emerald'
+            if r['nivel_riesgo'] == 'Moderado': color = 'orange'
+            elif r['nivel_riesgo'] in ['Elevado', 'Crítico']: color = 'rose'
+            
+            # Formatear la fecha si existe, asumiendo que fecha_creacion puede ser un datetime
+            fecha_str = r['fecha_creacion'].strftime("%d %b %Y") if r.get('fecha_creacion') else 'Reciente'
+            
+            records.append({
+                'id': str(r['id']),
+                'date': fecha_str,
+                'riskLevel': r['nivel_riesgo'] or 'Pendiente',
+                'riskColor': color,
+                'summary': r['observaciones'] or 'Evaluación sin observaciones adicionales'
+            })
+            
+        return jsonify({
+            'status': 'success',
+            'records': records
+        })
+    except Error as e:
+        print(f"Error fetching history: {e}")
+        return jsonify({'status': 'error', 'message': 'Error interno fetching history'}), 500
+    finally:
+        if conn.is_connected():
+            cursor.close()
+            conn.close()
 
 
 @app.route('/api/resources', methods=['GET'])
