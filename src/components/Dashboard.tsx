@@ -37,7 +37,7 @@ interface DashboardData {
 export default function Dashboard({ onLogout, onNavigate, aiDiagnostico, estudianteId }: DashboardProps) {
   const [data, setData] = useState<DashboardData | null>(null);
 
-  const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://localhost:5000');
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   useEffect(() => {
     // Si recibimos datos reales de la IA, usarlos directamente
