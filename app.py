@@ -169,6 +169,52 @@ def login():
         return jsonify({'error': str(e), 'status': 'error'}), 500
 
 
+@app.route('/api/register', methods=['POST'])
+def register():
+    """Registro de nuevo estudiante."""
+    try:
+        data = request.json or {}
+        nombre = data.get('nombre', '')
+        correo = data.get('correo', '')
+        password = data.get('password', '')
+        programa = data.get('programa_academico', 'No especificado')
+
+        if not nombre or not correo or not password:
+            return jsonify({'status': 'error', 'message': 'Faltan campos obligatorios'}), 400
+
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'status': 'error', 'message': 'Error de conexión a la base de datos'}), 500
+
+        try:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT id FROM estudiantes WHERE correo = %s", (correo,))
+            if cursor.fetchone():
+                return jsonify({'status': 'error', 'message': 'El correo ya está registrado'}), 400
+
+            insert_query = "INSERT INTO estudiantes (nombre, correo, password, programa_academico) VALUES (%s, %s, %s, %s)"
+            cursor.execute(insert_query, (nombre, correo, password, programa))
+            conn.commit()
+            
+            user_id = cursor.lastrowid
+            
+            return jsonify({
+                'status': 'success',
+                'user': {
+                    'id': user_id,
+                    'name': nombre,
+                    'program': programa
+                }
+            })
+        finally:
+            if conn.is_connected():
+                cursor.close()
+                conn.close()
+    except Exception as e:
+        print(f"Error global en register: {e}")
+        return jsonify({'error': str(e), 'status': 'error'}), 500
+
+
 @app.route('/api/evaluate', methods=['POST'])
 def evaluate():
     """

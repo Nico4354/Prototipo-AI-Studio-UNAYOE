@@ -174,10 +174,10 @@ export default function Dashboard({ onLogout, onNavigate, aiDiagnostico, estudia
                   </div>
                 </div>
                 <div className="mt-6 pt-6 border-t border-slate-100 flex justify-between items-center w-full">
-                  <button className="flex-1 py-2 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg hover:bg-blue-100 transition-colors mr-2">
+                  <button onClick={() => alert('Funcionalidad en desarrollo para el prototipo. ¡Próximamente!')} className="flex-1 py-2 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg hover:bg-blue-100 transition-colors mr-2">
                     Agendar Cita en UNAYOE
                   </button>
-                  <button className="flex-1 py-2 bg-slate-50 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 transition-colors ml-2">
+                  <button onClick={() => alert('Funcionalidad en desarrollo para el prototipo. ¡Próximamente!')} className="flex-1 py-2 bg-slate-50 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 transition-colors ml-2">
                     Ver Detalle del Test
                   </button>
                 </div>
@@ -209,7 +209,7 @@ export default function Dashboard({ onLogout, onNavigate, aiDiagnostico, estudia
                 <div className="bg-white rounded-2xl shadow-lg shadow-slate-200/50 p-6 border border-slate-100 flex flex-col">
                   <h4 className="text-sm font-bold text-slate-800 mb-4">Próxima Acción</h4>
                   <p className="text-xs text-slate-500 mb-4">Si sientes que la carga te sobrepasa, estamos aquí para escucharte en el pabellón antiguo.</p>
-                  <button className="mt-auto w-full py-2 bg-slate-50 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 transition-colors">Solicitar Triaje</button>
+                  <button onClick={() => alert('Funcionalidad en desarrollo para el prototipo. ¡Próximamente!')} className="mt-auto w-full py-2 bg-slate-50 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 transition-colors">Solicitar Triaje</button>
                 </div>
               </section>
             </div>

@@ -17,6 +17,21 @@ export default function Settings({ onLogout, onNavigate }: SettingsProps) {
     monthlyEmails: true,
   });
 
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    return (localStorage.getItem('theme') as 'light' | 'dark') || 'light';
+  });
+
+  const handleThemeToggle = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    if (newTheme === 'dark') {
+      document.body.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
+    }
+  };
+
   useEffect(() => {
     const fetchSettings = async () => {
       try {
@@ -145,6 +160,22 @@ export default function Settings({ onLogout, onNavigate }: SettingsProps) {
                       className={`w-11 h-6 rounded-full shrink-0 transition-colors relative flex items-center ${preferences.pauses ? 'bg-blue-600' : 'bg-slate-200'}`}
                     >
                       <div className={`w-4 h-4 bg-white rounded-full absolute transition-all ${preferences.pauses ? 'translate-x-6' : 'translate-x-1'}`}></div>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 border-t border-slate-100 pt-5 mt-5">
+                    <div className="flex items-start gap-3">
+                      <Moon className="text-slate-400 w-5 h-5 mt-0.5" />
+                      <div>
+                        <p className="font-bold text-sm text-slate-800">Modo Oscuro / Alto Contraste</p>
+                        <p className="text-xs text-slate-500">Mejora la accesibilidad visual invirtiendo los colores de fondo.</p>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={handleThemeToggle}
+                      className={`w-11 h-6 rounded-full shrink-0 transition-colors relative flex items-center ${theme === 'dark' ? 'bg-blue-600' : 'bg-slate-200'}`}
+                    >
+                      <div className={`w-4 h-4 bg-white rounded-full absolute transition-all ${theme === 'dark' ? 'translate-x-6' : 'translate-x-1'}`}></div>
                     </button>
                   </div>
                   

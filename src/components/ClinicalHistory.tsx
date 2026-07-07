@@ -121,7 +121,9 @@ export default function ClinicalHistory({ onLogout, onNavigate, estudianteId }: 
                       </div>
                       <div>
                         <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <h4 className="text-sm font-bold text-slate-800">{record.date}</h4>
+                          <h4 className="text-sm font-bold text-slate-800">
+                            {new Date(record.date).toLocaleString('es-PE', { timeZone: 'America/Lima', dateStyle: 'medium', timeStyle: 'short' })}
+                          </h4>
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${getColorClasses(record.riskColor)}`}>
                             Riesgo {record.riskLevel}
                           </span>

@@ -153,7 +153,7 @@ export default function Resources({ onLogout, onNavigate }: ResourcesProps) {
                         </p>
                       </div>
                     </div>
-                    <button className="w-full sm:w-auto px-4 py-2 bg-blue-50 text-blue-700 font-bold text-xs rounded-lg hover:bg-blue-100 transition-colors shrink-0">
+                    <button onClick={() => alert('Funcionalidad en desarrollo para el prototipo. ¡Próximamente!')} className="w-full sm:w-auto px-4 py-2 bg-blue-50 text-blue-700 font-bold text-xs rounded-lg hover:bg-blue-100 transition-colors shrink-0">
                       Inscribirse
                     </button>
                   </div>
@@ -178,7 +178,7 @@ export default function Resources({ onLogout, onNavigate }: ResourcesProps) {
                         <p className="text-xs text-slate-500 leading-relaxed">{guide.description}</p>
                       </div>
                     </div>
-                    <button className="w-full sm:w-auto px-4 py-2 bg-emerald-50 test text-emerald-700 font-bold text-xs rounded-lg hover:bg-emerald-100 transition-colors shrink-0">
+                    <button onClick={() => alert('Funcionalidad en desarrollo para el prototipo. ¡Próximamente!')} className="w-full sm:w-auto px-4 py-2 bg-emerald-50 test text-emerald-700 font-bold text-xs rounded-lg hover:bg-emerald-100 transition-colors shrink-0">
                       Leer Guía
                     </button>
                   </div>

@@ -12,6 +12,11 @@ body {
   font-family: var(--font-sans);
 }
 
+.dark-theme {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
 .soft-elevation {
   box-shadow: 0 10px 15px -3px rgba(226, 232, 240, 0.5), 0 4px 6px -4px rgba(226, 232, 240, 0.5);
 }

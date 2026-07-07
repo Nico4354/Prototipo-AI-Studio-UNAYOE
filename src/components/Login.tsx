@@ -5,9 +5,10 @@ import { UserData } from '../App';
 
 interface LoginProps {
   onLogin: (user: UserData) => void;
+  onGoToRegister: () => void;
 }
 
-export default function Login({ onLogin }: LoginProps) {
+export default function Login({ onLogin, onGoToRegister }: LoginProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
@@ -160,7 +161,10 @@ export default function Login({ onLogin }: LoginProps) {
           </form>
 
           {/* Footer Links */}
-          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+          <div className="mt-8 pt-6 border-t border-slate-100 text-center flex flex-col gap-2">
+            <p className="text-xs text-slate-500">
+              ¿No tienes cuenta? <button type="button" onClick={onGoToRegister} className="text-blue-600 font-bold hover:underline bg-transparent border-none p-0 cursor-pointer">Regístrate</button>
+            </p>
             <p className="text-xs text-slate-500">
               ¿Necesita ayuda técnica? <a className="text-blue-600 font-bold hover:underline" href="#">Soporte Técnico</a>
             </p>

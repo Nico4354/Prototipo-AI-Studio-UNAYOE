@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Login from './components/Login';
+import Register from './components/Register';
 import EvaluationForm from './components/EvaluationForm';
 import ProcessingModal from './components/ProcessingModal';
 import Dashboard from './components/Dashboard';
@@ -8,7 +9,7 @@ import Resources from './components/Resources';
 import TechnicalSupport from './components/TechnicalSupport';
 import Settings from './components/Settings';
 
-type ViewState = 'login' | 'evaluation' | 'processing' | 'dashboard' | 'history' | 'resources' | 'support' | 'settings';
+type ViewState = 'login' | 'register' | 'evaluation' | 'processing' | 'dashboard' | 'history' | 'resources' | 'support' | 'settings';
 
 export interface UserData {
   id: number;
@@ -43,6 +44,13 @@ export default function App() {
   const [aiDiagnostico, setAiDiagnostico] = useState<DiagnosticoIA | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
   
+  React.useEffect(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      document.body.classList.add('dark-theme');
+    }
+  }, []);
+  
   // Handlers for state transitions
   const handleLoginSuccess = (userData: UserData) => {
     setUser(userData);
@@ -76,7 +84,19 @@ export default function App() {
 
   return (
     <div className="w-full min-h-screen">
-      {currentView === 'login' && <Login onLogin={handleLoginSuccess} />}
+      {currentView === 'login' && (
+        <Login 
+          onLogin={handleLoginSuccess} 
+          onGoToRegister={() => setCurrentView('register')} 
+        />
+      )}
+      
+      {currentView === 'register' && (
+        <Register 
+          onRegister={handleLoginSuccess} 
+          onGoToLogin={() => setCurrentView('login')} 
+        />
+      )}
       
       {currentView === 'evaluation' && (
         <EvaluationForm 
