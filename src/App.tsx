@@ -103,6 +103,7 @@ export default function App() {
           onNext={handleEvaluationSubmit} 
           onLogout={handleLogout}
           onNavigate={handleNavigate}
+          user={user}
         />
       )}
       
@@ -114,6 +115,7 @@ export default function App() {
               onNext={() => {}} 
               onLogout={handleLogout}
               onNavigate={handleNavigate}
+              user={user}
             />
           </div>
           <ProcessingModal 
@@ -131,6 +133,7 @@ export default function App() {
           onNavigate={handleNavigate}
           aiDiagnostico={aiDiagnostico}
           estudianteId={user?.id}
+          user={user}
         />
       )}
 
@@ -139,6 +142,7 @@ export default function App() {
           onLogout={handleLogout}
           onNavigate={handleNavigate}
           estudianteId={user?.id}
+          user={user}
         />
       )}
 
@@ -146,6 +150,7 @@ export default function App() {
         <Resources
           onLogout={handleLogout}
           onNavigate={handleNavigate}
+          user={user}
         />
       )}
 
@@ -153,6 +158,7 @@ export default function App() {
         <TechnicalSupport
           onLogout={handleLogout}
           onNavigate={handleNavigate}
+          user={user}
         />
       )}
 
@@ -160,6 +166,7 @@ export default function App() {
         <Settings
           onLogout={handleLogout}
           onNavigate={handleNavigate}
+          user={user}
         />
       )}
     </div>

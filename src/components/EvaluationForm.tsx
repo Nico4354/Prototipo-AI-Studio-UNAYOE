@@ -6,6 +6,7 @@ interface EvaluationFormProps {
   onNext: (data: any) => void;
   onLogout: () => void;
   onNavigate: (view: string) => void;
+  user?: { name: string; program: string } | null;
 }
 
 const SYMPTOM_OPTIONS = [
@@ -26,7 +27,7 @@ const DURATION_OPTIONS = [
   'Más de 1 mes',
 ];
 
-export default function EvaluationForm({ onNext, onLogout, onNavigate }: EvaluationFormProps) {
+export default function EvaluationForm({ onNext, onLogout, onNavigate, user }: EvaluationFormProps) {
   const [step, setStep] = useState(1);
   const [stressLevel, setStressLevel] = useState<string | null>(null);
   const [sleepQuality, setSleepQuality] = useState('');
@@ -118,8 +119,8 @@ export default function EvaluationForm({ onNext, onLogout, onNavigate }: Evaluat
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-3">
               <div className="text-right">
-                <p className="text-xs font-semibold">Alex Rivera</p>
-                <p className="text-[10px] text-slate-400 leading-none">Ingeniería de Software</p>
+                <p className="text-xs font-semibold">{user?.name || 'Alex Rivera'}</p>
+                <p className="text-[10px] text-slate-400 leading-none">{user?.program || 'Ingeniería de Software'}</p>
               </div>
               <div className="w-9 h-9 bg-slate-100 rounded-full border-2 border-white shadow-sm overflow-hidden flex items-center justify-center text-slate-500">
                 <User size={18} />

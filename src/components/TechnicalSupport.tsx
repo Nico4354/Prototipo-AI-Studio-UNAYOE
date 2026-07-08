@@ -5,9 +5,10 @@ import Sidebar from './Sidebar';
 interface TechnicalSupportProps {
   onLogout: () => void;
   onNavigate: (view: string) => void;
+  user?: { name: string; program: string } | null;
 }
 
-export default function TechnicalSupport({ onLogout, onNavigate }: TechnicalSupportProps) {
+export default function TechnicalSupport({ onLogout, onNavigate, user }: TechnicalSupportProps) {
   const [problemType, setProblemType] = useState('Técnico');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,8 +62,8 @@ export default function TechnicalSupport({ onLogout, onNavigate }: TechnicalSupp
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-3">
               <div className="text-right">
-                <p className="text-xs font-semibold">Alex Rivera</p>
-                <p className="text-[10px] text-slate-400 leading-none">Ingeniería de Software</p>
+                <p className="text-xs font-semibold">{user?.name || 'Alex Rivera'}</p>
+                <p className="text-[10px] text-slate-400 leading-none">{user?.program || 'Ingeniería de Software'}</p>
               </div>
               <div className="w-9 h-9 bg-slate-100 rounded-full border-2 border-white shadow-sm overflow-hidden flex items-center justify-center text-slate-500">
                 <User size={18} />

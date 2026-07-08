@@ -5,9 +5,10 @@ import Sidebar from './Sidebar';
 interface SettingsProps {
   onLogout: () => void;
   onNavigate: (view: string) => void;
+  user?: { name: string; program: string } | null;
 }
 
-export default function Settings({ onLogout, onNavigate }: SettingsProps) {
+export default function Settings({ onLogout, onNavigate, user }: SettingsProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
@@ -17,9 +18,14 @@ export default function Settings({ onLogout, onNavigate }: SettingsProps) {
     monthlyEmails: true,
   });
 
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    return (localStorage.getItem('theme') as 'light' | 'dark') || 'light';
-  });
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  useEffect(() => {
+    try {
+      const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
+      if (savedTheme) setTheme(savedTheme);
+    } catch (e) {}
+  }, []);
 
   const handleThemeToggle = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -87,8 +93,8 @@ export default function Settings({ onLogout, onNavigate }: SettingsProps) {
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-3">
               <div className="text-right">
-                <p className="text-xs font-semibold">Alex Rivera</p>
-                <p className="text-[10px] text-slate-400 leading-none">Ingeniería de Software</p>
+                <p className="text-xs font-semibold">{user?.name || 'Alex Rivera'}</p>
+                <p className="text-[10px] text-slate-400 leading-none">{user?.program || 'Ingeniería de Software'}</p>
               </div>
               <div className="w-9 h-9 bg-slate-100 rounded-full border-2 border-white shadow-sm overflow-hidden flex items-center justify-center text-slate-500">
                 <User size={18} />
@@ -115,28 +121,14 @@ export default function Settings({ onLogout, onNavigate }: SettingsProps) {
                     <User className="text-slate-400 w-5 h-5 mt-0.5" />
                     <div>
                       <p className="text-xs font-bold text-slate-800 mb-0.5">Nombre Completo</p>
-                      <p className="text-sm text-slate-500">Alex Rivera</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Mail className="text-slate-400 w-5 h-5 mt-0.5" />
-                    <div>
-                      <p className="text-xs font-bold text-slate-800 mb-0.5">Correo Institucional</p>
-                      <p className="text-sm text-slate-500">alex.rivera@unmsm.edu.pe</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Book className="text-slate-400 w-5 h-5 mt-0.5" />
-                    <div>
-                      <p className="text-xs font-bold text-slate-800 mb-0.5">Facultad</p>
-                      <p className="text-sm text-slate-500">FISI</p>
+                      <p className="text-sm text-slate-500">{user?.name || 'Alex Rivera'}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Book className="text-slate-400 w-5 h-5 mt-0.5" />
                     <div>
                       <p className="text-xs font-bold text-slate-800 mb-0.5">Programa</p>
-                      <p className="text-sm text-slate-500">Ingeniería de Software</p>
+                      <p className="text-sm text-slate-500">{user?.program || 'Ingeniería de Software'}</p>
                     </div>
                   </div>
                 </div>

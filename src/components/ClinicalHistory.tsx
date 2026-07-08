@@ -6,6 +6,7 @@ interface ClinicalHistoryProps {
   onLogout: () => void;
   onNavigate: (view: string) => void;
   estudianteId?: number;
+  user?: { name: string; program: string } | null;
 }
 
 interface HistoryRecord {
@@ -16,7 +17,7 @@ interface HistoryRecord {
   summary: string;
 }
 
-export default function ClinicalHistory({ onLogout, onNavigate, estudianteId }: ClinicalHistoryProps) {
+export default function ClinicalHistory({ onLogout, onNavigate, estudianteId, user }: ClinicalHistoryProps) {
   const [records, setRecords] = useState<HistoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -88,8 +89,8 @@ export default function ClinicalHistory({ onLogout, onNavigate, estudianteId }: 
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-3">
               <div className="text-right">
-                <p className="text-xs font-semibold">Alex Rivera</p>
-                <p className="text-[10px] text-slate-400 leading-none">Ingeniería de Software</p>
+                <p className="text-xs font-semibold">{user?.name || 'Alex Rivera'}</p>
+                <p className="text-[10px] text-slate-400 leading-none">{user?.program || 'Ingeniería de Software'}</p>
               </div>
               <div className="w-9 h-9 bg-slate-100 rounded-full border-2 border-white shadow-sm overflow-hidden flex items-center justify-center text-slate-500">
                 <User size={18} />
@@ -131,7 +132,7 @@ export default function ClinicalHistory({ onLogout, onNavigate, estudianteId }: 
                         <p className="text-sm text-slate-500">{record.summary}</p>
                       </div>
                     </div>
-                    <button className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 border border-blue-100 rounded-lg text-xs font-bold hover:bg-blue-50 transition-colors shadow-sm self-start md:self-auto shrink-0">
+                    <button onClick={() => alert('Funcionalidad en desarrollo para el prototipo. ¡Próximamente!')} className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 border border-blue-100 rounded-lg text-xs font-bold hover:bg-blue-50 transition-colors shadow-sm self-start md:self-auto shrink-0">
                       <FileText className="w-4 h-4" />
                       Ver Informe Completo
                     </button>

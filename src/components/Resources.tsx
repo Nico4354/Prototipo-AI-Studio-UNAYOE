@@ -5,6 +5,7 @@ import Sidebar from './Sidebar';
 interface ResourcesProps {
   onLogout: () => void;
   onNavigate: (view: string) => void;
+  user?: { name: string; program: string } | null;
 }
 
 interface Workshop {
@@ -23,7 +24,7 @@ interface Guide {
   icon: string;
 }
 
-export default function Resources({ onLogout, onNavigate }: ResourcesProps) {
+export default function Resources({ onLogout, onNavigate, user }: ResourcesProps) {
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [guides, setGuides] = useState<Guide[]>([]);
   const [loading, setLoading] = useState(true);
@@ -107,8 +108,8 @@ export default function Resources({ onLogout, onNavigate }: ResourcesProps) {
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-3">
               <div className="text-right">
-                <p className="text-xs font-semibold">Alex Rivera</p>
-                <p className="text-[10px] text-slate-400 leading-none">Ingeniería de Software</p>
+                <p className="text-xs font-semibold">{user?.name || 'Alex Rivera'}</p>
+                <p className="text-[10px] text-slate-400 leading-none">{user?.program || 'Ingeniería de Software'}</p>
               </div>
               <div className="w-9 h-9 bg-slate-100 rounded-full border-2 border-white shadow-sm overflow-hidden flex items-center justify-center text-slate-500">
                 <User size={18} />
