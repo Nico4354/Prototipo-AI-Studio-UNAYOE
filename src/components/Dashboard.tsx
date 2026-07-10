@@ -176,7 +176,7 @@ export default function Dashboard({ onLogout, onNavigate, aiDiagnostico, estudia
                   </div>
                 </div>
                 <div className="mt-6 pt-6 border-t border-slate-100 flex justify-between items-center w-full">
-                  <button onClick={() => alert('Funcionalidad en desarrollo para el prototipo. ¡Próximamente!')} className="flex-1 py-2 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg hover:bg-blue-100 transition-colors mr-2">
+                  <button onClick={() => onNavigate('support')} className="flex-1 py-2 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg hover:bg-blue-100 transition-colors mr-2">
                     Agendar Cita en UNAYOE
                   </button>
                   <button onClick={() => setShowFullReport(true)} className="flex-1 py-2 bg-slate-50 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 transition-colors ml-2">
@@ -211,7 +211,7 @@ export default function Dashboard({ onLogout, onNavigate, aiDiagnostico, estudia
                 <div className="bg-white rounded-2xl shadow-lg shadow-slate-200/50 p-6 border border-slate-100 flex flex-col">
                   <h4 className="text-sm font-bold text-slate-800 mb-4">Próxima Acción</h4>
                   <p className="text-xs text-slate-500 mb-4">Si sientes que la carga te sobrepasa, estamos aquí para escucharte en el pabellón antiguo.</p>
-                  <button onClick={() => alert('Funcionalidad en desarrollo para el prototipo. ¡Próximamente!')} className="mt-auto w-full py-2 bg-slate-50 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 transition-colors">Solicitar Triaje</button>
+                  <button onClick={() => onNavigate('support')} className="mt-auto w-full py-2 bg-slate-50 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 transition-colors">Solicitar Triaje</button>
                 </div>
               </section>
             </div>
@@ -236,7 +236,7 @@ export default function Dashboard({ onLogout, onNavigate, aiDiagnostico, estudia
 
         {showFullReport && data && (
           <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto print-section">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-slate-800">Informe Completo</h2>
                 <div className="flex gap-2">
@@ -266,15 +266,8 @@ export default function Dashboard({ onLogout, onNavigate, aiDiagnostico, estudia
                     {data.suggestions?.map((sug, idx) => (
                       <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                         <h4 className="font-bold text-slate-800 mb-2">{sug.title}</h4>
-                        <p className="text-sm text-slate-600 mb-3">{sug.description}</p>
-                        {sug.actionLink && (
-                          <a href={sug.actionLink} className="text-sm font-bold text-blue-600 hover:underline">
-                            {sug.actionText} &rarr;
-                          </a>
-                        )}
-                        {!sug.actionLink && (
-                          <span className="text-sm font-bold text-blue-600">{sug.actionText}</span>
-                        )}
+                        <p className="text-sm text-slate-600 mb-1">{sug.description}</p>
+                        <span className="text-sm font-bold text-slate-700">{sug.actionText}</span>
                       </div>
                     ))}
                   </div>

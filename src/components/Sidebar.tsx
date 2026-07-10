@@ -108,7 +108,7 @@ export default function Sidebar({ currentView, onNavigate, onLogout }: SidebarPr
         <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl text-left">
           <p className="text-xs font-bold text-orange-700 mb-1">Línea de Emergencia</p>
           <p className="text-xs text-orange-600 mb-2">¿Necesitas ayuda inmediata?</p>
-          <button onClick={() => alert('Funcionalidad en desarrollo para el prototipo. ¡Próximamente!')} className="w-full py-2 bg-white text-orange-700 border border-orange-200 text-xs font-bold rounded-lg shadow-sm">Contactar Psicólogo</button>
+          <button onClick={() => onNavigate('support')} className="w-full py-2 bg-white text-orange-700 border border-orange-200 text-xs font-bold rounded-lg shadow-sm">Contactar Psicólogo</button>
         </div>
       </div>
     </aside>

@@ -106,6 +106,8 @@ CRITERIOS DE CLASIFICACIÓN (inspirados en GAD-7):
 - "Elevado": Múltiples indicadores preocupantes. Afectación notable en el día a día.
 - "Crítico": Indicadores alarmantes. Se recomienda atención prioritaria de UNAYOE.
 
+PROHIBIDO incluir enlaces, hipervínculos, o frases que inviten a hacer clic (como 'Descubre cómo', 'Agendar sesión', 'Haz clic aquí' o 'Recursos'). Las sugerencias deben ser texto plano y directo, sin llamadas a la acción externas.
+
 Responde EXCLUSIVAMENTE con este JSON (sin ```json, sin texto antes o después):
 {{
   "nivel_riesgo": "Bajo|Moderado|Elevado|Crítico",
@@ -212,6 +214,39 @@ def register():
                 conn.close()
     except Exception as e:
         print(f"Error global en register: {e}")
+        return jsonify({'error': str(e), 'status': 'error'}), 500
+
+
+@app.route('/api/reset-password', methods=['POST'])
+def reset_password():
+    try:
+        data = request.json or {}
+        correo = data.get('correo', '')
+        nueva_password = data.get('nueva_password', '')
+        
+        if not correo or not nueva_password:
+            return jsonify({'status': 'error', 'message': 'Faltan datos obligatorios'}), 400
+            
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({'status': 'error', 'message': 'Error de conexión a la base de datos'}), 500
+            
+        try:
+            cursor = conn.cursor()
+            query = "UPDATE estudiantes SET password = %s WHERE correo = %s"
+            cursor.execute(query, (nueva_password, correo))
+            conn.commit()
+            
+            if cursor.rowcount > 0:
+                return jsonify({'status': 'success', 'message': 'Contraseña actualizada correctamente'})
+            else:
+                return jsonify({'status': 'error', 'message': 'Correo institucional no encontrado'}), 404
+        finally:
+            if conn.is_connected():
+                cursor.close()
+                conn.close()
+    except Exception as e:
+        print(f"Error global en reset-password: {e}")
         return jsonify({'error': str(e), 'status': 'error'}), 500
 
 

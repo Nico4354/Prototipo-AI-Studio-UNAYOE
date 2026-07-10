@@ -13,6 +13,7 @@ export default function Login({ onLogin, onGoToRegister }: LoginProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -21,6 +22,28 @@ export default function Login({ onLogin, onGoToRegister }: LoginProps) {
     setLoading(true);
     setError(false);
     
+    if (isResetting) {
+      try {
+        const response = await fetch(`${API_URL}/api/reset-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ correo: String(email), nueva_password: String(password) })
+        });
+        const data = await response.json();
+        if (data.status === 'success') {
+          setIsResetting(false);
+          setPassword('');
+        } else {
+          setError(true);
+        }
+      } catch (err) {
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     try {
       const response = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
@@ -91,8 +114,8 @@ export default function Login({ onLogin, onGoToRegister }: LoginProps) {
           </div>
 
           <div className="mb-8">
-            <h3 className="text-xl font-bold text-slate-800 mb-1">Acceso para Estudiantes</h3>
-            <p className="text-sm text-slate-500">Inicie sesión con sus credenciales universitarias</p>
+            <h3 className="text-xl font-bold text-slate-800 mb-1">{isResetting ? 'Restablecer Contraseña' : 'Acceso para Estudiantes'}</h3>
+            <p className="text-sm text-slate-500">{isResetting ? 'Ingrese su correo y la nueva contraseña' : 'Inicie sesión con sus credenciales universitarias'}</p>
           </div>
 
           {/* Error Alert */}
@@ -100,7 +123,7 @@ export default function Login({ onLogin, onGoToRegister }: LoginProps) {
             <div className="mb-6 flex items-start gap-3 p-4 rounded-xl bg-rose-50 border border-rose-100">
               <AlertCircle className="text-rose-600 w-5 h-5 shrink-0" />
               <p className="text-xs text-rose-700 font-medium">
-                Credenciales incorrectas. Verifique su correo y contraseña.
+                Ha ocurrido un error. Verifique sus datos.
               </p>
             </div>
           )}
@@ -128,11 +151,13 @@ export default function Login({ onLogin, onGoToRegister }: LoginProps) {
             <div className="flex flex-col gap-1.5">
               <div className="flex justify-between items-center ml-1">
                 <label className="font-bold text-xs text-slate-700" htmlFor="password">
-                  Contraseña
+                  {isResetting ? 'Nueva Contraseña' : 'Contraseña'}
                 </label>
-                <a className="text-xs font-bold text-blue-600 hover:underline" href="#">
-                  ¿Olvidó su contraseña?
-                </a>
+                {!isResetting && (
+                  <button type="button" onClick={() => setIsResetting(true)} className="text-xs font-bold text-blue-600 hover:underline bg-transparent border-none p-0 cursor-pointer">
+                    ¿Olvidó su contraseña?
+                  </button>
+                )}
               </div>
               <div className="relative">
                 <input 
@@ -148,14 +173,23 @@ export default function Login({ onLogin, onGoToRegister }: LoginProps) {
             </div>
 
             {/* Actions */}
-            <div className="pt-4">
+            <div className="pt-4 flex gap-3">
+              {isResetting && (
+                <button 
+                  type="button"
+                  onClick={() => setIsResetting(false)}
+                  className="w-1/3 bg-slate-100 text-slate-700 font-bold text-sm py-3 rounded-lg hover:bg-slate-200 transition-colors"
+                >
+                  Cancelar
+                </button>
+              )}
               <button 
-                className="w-full bg-blue-600 text-white font-bold text-sm py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-md shadow-blue-200 flex justify-center items-center gap-2 disabled:opacity-70" 
+                className={`${isResetting ? 'w-2/3' : 'w-full'} bg-blue-600 text-white font-bold text-sm py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-md shadow-blue-200 flex justify-center items-center gap-2 disabled:opacity-70`}
                 type="submit"
                 disabled={loading}
               >
-                {loading ? 'Iniciando...' : 'Iniciar Sesión'}
-                <LogIn className="w-4 h-4" />
+                {loading ? 'Procesando...' : (isResetting ? 'Guardar Cambios' : 'Iniciar Sesión')}
+                {!isResetting && <LogIn className="w-4 h-4" />}
               </button>
             </div>
           </form>
