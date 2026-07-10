@@ -17,6 +17,54 @@ body {
   color: #f8fafc !important;
 }
 
+/* ==========================================================================
+   Modo Oscuro Global - Sobrescritura de utilidades de Tailwind
+   (Estrategia para el prototipo: fuerza la herencia oscura sobre clases claras)
+   ========================================================================== */
+
+/* Fondos base y contenedores */
+.dark-theme .bg-white,
+.dark-theme .bg-slate-50,
+.dark-theme .bg-slate-100 {
+  background-color: #1e293b !important;
+}
+
+/* Textos principales */
+.dark-theme .text-slate-800,
+.dark-theme .text-slate-700 {
+  color: #f8fafc !important;
+}
+
+/* Textos secundarios y descriptivos */
+.dark-theme .text-slate-600,
+.dark-theme .text-slate-500 {
+  color: #94a3b8 !important;
+}
+
+.dark-theme .text-slate-400 {
+  color: #cbd5e1 !important;
+}
+
+/* Bordes y separadores */
+.dark-theme .border-slate-100,
+.dark-theme .border-slate-200 {
+  border-color: #334155 !important;
+}
+
+/* Preservar legibilidad de fondos acentuados (soft bg para badges/botones) */
+.dark-theme .bg-blue-50 { background-color: rgba(59, 130, 246, 0.1) !important; }
+.dark-theme .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.1) !important; }
+.dark-theme .bg-rose-50 { background-color: rgba(244, 63, 94, 0.1) !important; }
+.dark-theme .bg-orange-50 { background-color: rgba(249, 115, 22, 0.1) !important; }
+.dark-theme .bg-violet-50 { background-color: rgba(139, 92, 246, 0.1) !important; }
+
+/* Badges (Level 100) */
+.dark-theme .bg-blue-100 { background-color: rgba(59, 130, 246, 0.15) !important; }
+.dark-theme .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.15) !important; }
+.dark-theme .bg-rose-100 { background-color: rgba(244, 63, 94, 0.15) !important; }
+.dark-theme .bg-orange-100 { background-color: rgba(249, 115, 22, 0.15) !important; }
+.dark-theme .bg-violet-100 { background-color: rgba(139, 92, 246, 0.15) !important; }
+
 .soft-elevation {
   box-shadow: 0 10px 15px -3px rgba(226, 232, 240, 0.5), 0 4px 6px -4px rgba(226, 232, 240, 0.5);
 }
