@@ -15,11 +15,19 @@ interface HistoryRecord {
   riskLevel: string;
   riskColor: 'emerald' | 'orange' | 'rose';
   summary: string;
+  riskDescription?: string;
+  suggestions?: {
+    title: string;
+    description: string;
+    actionText: string;
+  }[];
 }
 
 export default function ClinicalHistory({ onLogout, onNavigate, estudianteId, user }: ClinicalHistoryProps) {
   const [records, setRecords] = useState<HistoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showFullReport, setShowFullReport] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<HistoryRecord | null>(null);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -132,7 +140,7 @@ export default function ClinicalHistory({ onLogout, onNavigate, estudianteId, us
                         <p className="text-sm text-slate-500">{record.summary}</p>
                       </div>
                     </div>
-                    <button onClick={() => alert('Funcionalidad en desarrollo para el prototipo. ¡Próximamente!')} className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 border border-blue-100 rounded-lg text-xs font-bold hover:bg-blue-50 transition-colors shadow-sm self-start md:self-auto shrink-0">
+                    <button onClick={() => { setSelectedRecord(record); setShowFullReport(true); }} className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 border border-blue-100 rounded-lg text-xs font-bold hover:bg-blue-50 transition-colors shadow-sm self-start md:self-auto shrink-0">
                       <FileText className="w-4 h-4" />
                       Ver Informe Completo
                     </button>
@@ -150,6 +158,53 @@ export default function ClinicalHistory({ onLogout, onNavigate, estudianteId, us
             )}
           </div>
         </div>
+
+        {showFullReport && selectedRecord && (
+          <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto print-section">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-slate-800">Informe Completo - {selectedRecord.date}</h2>
+                <div className="flex gap-2">
+                  <button onClick={() => window.print()} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-bold transition-colors">
+                    Imprimir
+                  </button>
+                  <button onClick={() => setShowFullReport(false)} className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-sm font-bold transition-colors">
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Nivel de Riesgo</h3>
+                  <div className="text-lg font-bold text-slate-800">{selectedRecord.riskLevel}</div>
+                </div>
+                
+                {selectedRecord.riskDescription && (
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Descripción Detallada</h3>
+                    <p className="text-slate-700 leading-relaxed">{selectedRecord.riskDescription}</p>
+                  </div>
+                )}
+                
+                {selectedRecord.suggestions && selectedRecord.suggestions.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Sugerencias y Plan de Acción</h3>
+                    <div className="space-y-4">
+                      {selectedRecord.suggestions.map((sug, idx) => (
+                        <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                          <h4 className="font-bold text-slate-800 mb-2">{sug.title}</h4>
+                          <p className="text-sm text-slate-600 mb-1">{sug.description}</p>
+                          <span className="text-sm font-bold text-slate-700">{sug.actionText}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

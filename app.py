@@ -448,7 +448,7 @@ def history():
         try:
             cursor = conn.cursor(dictionary=True)
             query = """
-                SELECT e.id, e.observaciones, d.nivel_riesgo, e.fecha_creacion
+                SELECT e.id, e.observaciones, d.nivel_riesgo, d.descripcion_riesgo, d.sugerencias_json, e.fecha_creacion
                 FROM evaluaciones e
                 LEFT JOIN diagnosticos_ia d ON e.id = d.evaluacion_id
                 WHERE e.estudiante_id = %s
@@ -466,12 +466,21 @@ def history():
                 # Formatear la fecha si existe, asumiendo que fecha_creacion puede ser un datetime
                 fecha_str = r['fecha_creacion'].strftime("%d %b %Y") if r.get('fecha_creacion') else 'Reciente'
                 
+                sugerencias = []
+                if r.get('sugerencias_json'):
+                    try:
+                        sugerencias = json.loads(r['sugerencias_json'])
+                    except:
+                        pass
+
                 records.append({
                     'id': str(r['id']),
                     'date': fecha_str,
                     'riskLevel': r['nivel_riesgo'] or 'Pendiente',
                     'riskColor': color,
-                    'summary': r['observaciones'] or 'Evaluación sin observaciones adicionales'
+                    'summary': r['observaciones'] or 'Evaluación sin observaciones adicionales',
+                    'riskDescription': r.get('descripcion_riesgo'),
+                    'suggestions': sugerencias
                 })
                 
             return jsonify({
