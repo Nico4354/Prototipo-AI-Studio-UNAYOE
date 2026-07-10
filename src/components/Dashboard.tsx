@@ -37,6 +37,7 @@ interface DashboardData {
 
 export default function Dashboard({ onLogout, onNavigate, aiDiagnostico, estudianteId, user }: DashboardProps) {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [showFullReport, setShowFullReport] = useState(false);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -178,7 +179,7 @@ export default function Dashboard({ onLogout, onNavigate, aiDiagnostico, estudia
                   <button onClick={() => alert('Funcionalidad en desarrollo para el prototipo. ¡Próximamente!')} className="flex-1 py-2 bg-blue-50 text-blue-700 text-xs font-bold rounded-lg hover:bg-blue-100 transition-colors mr-2">
                     Agendar Cita en UNAYOE
                   </button>
-                  <button onClick={() => alert('Funcionalidad en desarrollo para el prototipo. ¡Próximamente!')} className="flex-1 py-2 bg-slate-50 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 transition-colors ml-2">
+                  <button onClick={() => setShowFullReport(true)} className="flex-1 py-2 bg-slate-50 text-slate-600 text-xs font-bold rounded-lg hover:bg-slate-100 transition-colors ml-2">
                     Ver Detalle del Test
                   </button>
                 </div>
@@ -232,6 +233,56 @@ export default function Dashboard({ onLogout, onNavigate, aiDiagnostico, estudia
             </div>
           </div>
         </div>
+
+        {showFullReport && data && (
+          <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-slate-800">Informe Completo</h2>
+                <div className="flex gap-2">
+                  <button onClick={() => window.print()} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-bold transition-colors">
+                    Imprimir
+                  </button>
+                  <button onClick={() => setShowFullReport(false)} className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-sm font-bold transition-colors">
+                    Cerrar
+                  </button>
+                </div>
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Nivel de Riesgo</h3>
+                  <div className="text-lg font-bold text-slate-800">{data.riskLevel}</div>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Descripción Detallada</h3>
+                  <p className="text-slate-700 leading-relaxed">{data.riskDescription}</p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Sugerencias y Plan de Acción</h3>
+                  <div className="space-y-4">
+                    {data.suggestions?.map((sug, idx) => (
+                      <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <h4 className="font-bold text-slate-800 mb-2">{sug.title}</h4>
+                        <p className="text-sm text-slate-600 mb-3">{sug.description}</p>
+                        {sug.actionLink && (
+                          <a href={sug.actionLink} className="text-sm font-bold text-blue-600 hover:underline">
+                            {sug.actionText} &rarr;
+                          </a>
+                        )}
+                        {!sug.actionLink && (
+                          <span className="text-sm font-bold text-blue-600">{sug.actionText}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
