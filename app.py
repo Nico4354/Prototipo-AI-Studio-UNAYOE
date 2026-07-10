@@ -9,6 +9,8 @@ NO diagnósticos clínicos. Es un prototipo de tamizaje.
 import os
 import json
 import time
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -333,12 +335,16 @@ def evaluate():
         if conn:
             try:
                 cursor = conn.cursor()
+                # Captura la hora exacta en Perú
+                hora_actual = datetime.now(ZoneInfo("America/Lima"))
+                fecha_creacion_str = hora_actual.strftime('%Y-%m-%d %H:%M:%S')
+
                 # 1. Insertar evaluación
                 query_eval = """
-                INSERT INTO evaluaciones (estudiante_id, nivel_estres, horas_sueno, impacto_energia, observaciones)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO evaluaciones (estudiante_id, nivel_estres, horas_sueno, impacto_energia, observaciones, fecha_creacion)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 """
-                cursor.execute(query_eval, (estudiante_id, nivel_estres_num, horas_sueno_num, impacto_energia_num, observaciones))
+                cursor.execute(query_eval, (estudiante_id, nivel_estres_num, horas_sueno_num, impacto_energia_num, observaciones, fecha_creacion_str))
                 evaluacion_id = cursor.lastrowid
                 
                 # 2. Insertar diagnóstico IA
@@ -464,7 +470,7 @@ def history():
                 elif r['nivel_riesgo'] in ['Elevado', 'Crítico']: color = 'rose'
                 
                 # Formatear la fecha si existe, asumiendo que fecha_creacion puede ser un datetime
-                fecha_str = r['fecha_creacion'].strftime("%d %b %Y") if r.get('fecha_creacion') else 'Reciente'
+                fecha_str = r['fecha_creacion'].isoformat() if hasattr(r.get('fecha_creacion'), 'isoformat') else str(r.get('fecha_creacion')) if r.get('fecha_creacion') else 'Reciente'
                 
                 sugerencias = []
                 if r.get('sugerencias_json'):
