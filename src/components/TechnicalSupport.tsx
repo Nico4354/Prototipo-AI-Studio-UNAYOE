@@ -12,38 +12,22 @@ export default function TechnicalSupport({ onLogout, onNavigate, user }: Technic
   const [problemType, setProblemType] = useState('Técnico');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [ticketId, setTicketId] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
 
     setIsSubmitting(true);
     
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/support`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ type: problemType, message }),
-      });
-      const data = await response.json();
-      
-      if (data.status === 'success') {
-        setTicketId(data.ticketId || 'TKT-' + Math.floor(1000 + Math.random() * 9000));
-        setIsSubmitted(true);
-      }
-    } catch (err) {
-      // Fallback
-      setTimeout(() => {
-        setTicketId('TKT-' + Math.floor(1000 + Math.random() * 9000));
-        setIsSubmitted(true);
-      }, 1000);
-    } finally {
+    // Simulate submission (Mock)
+    setTimeout(() => {
+      setTicketId('TK-' + Math.floor(Math.random() * 10000));
+      setIsSuccess(true);
       setIsSubmitting(false);
-    }
+      setMessage('');
+    }, 1500);
   };
 
   return (
@@ -131,18 +115,15 @@ export default function TechnicalSupport({ onLogout, onNavigate, user }: Technic
             <div className="bg-white rounded-2xl shadow-lg shadow-slate-200/50 p-8 border border-slate-100">
               <h3 className="text-lg font-bold text-slate-800 mb-6">Enviar un Ticket de Soporte</h3>
               
-              {isSubmitted ? (
+              {isSuccess ? (
                 <div className="flex flex-col items-center justify-center text-center py-8">
                   <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-4">
                     <CheckCircle className="text-emerald-500 w-8 h-8" />
                   </div>
-                  <h4 className="text-lg font-bold text-slate-800 mb-2">Mensaje Enviado</h4>
-                  <p className="text-sm text-slate-500 mb-6">Hemos recibido tu solicitud bajo el código <strong className="text-slate-700">{ticketId}</strong>. Te contactaremos pronto.</p>
+                  <h4 className="text-lg font-bold text-slate-800 mb-2">¡Mensaje enviado!</h4>
+                  <p className="text-sm text-slate-500 mb-6">Tu número de ticket es <strong className="text-slate-700">#{ticketId}</strong>. El equipo de UNAYOE te contactará pronto.</p>
                   <button 
-                    onClick={() => {
-                      setIsSubmitted(false);
-                      setMessage('');
-                    }}
+                    onClick={() => setIsSuccess(false)}
                     className="px-6 py-2 bg-slate-50 text-slate-600 font-bold text-xs rounded-lg hover:bg-slate-100 transition-colors"
                   >
                     Enviar otro ticket

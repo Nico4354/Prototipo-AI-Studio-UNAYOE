@@ -90,5 +90,5 @@ body {
 @media print { 
   body * { visibility: hidden !important; } 
   .print-section, .print-section * { visibility: visible !important; } 
-  .print-section { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; } 
+  .print-section { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; box-shadow: none; height: auto !important; max-height: none !important; overflow: visible !important; } 
 }

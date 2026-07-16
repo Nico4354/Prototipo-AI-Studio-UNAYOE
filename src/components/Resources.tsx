@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { User, Calendar, Video, BookOpen, FileText, Clock, Moon } from 'lucide-react';
+import { User, Calendar, Video, BookOpen, FileText, Clock, Moon, Check } from 'lucide-react';
 import Sidebar from './Sidebar';
 
 interface ResourcesProps {
@@ -28,6 +28,21 @@ export default function Resources({ onLogout, onNavigate, user }: ResourcesProps
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [guides, setGuides] = useState<Guide[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const [enrolledWorkshops, setEnrolledWorkshops] = useState<Set<string>>(new Set());
+  const [toast, setToast] = useState<{ visible: boolean; message: string }>({ visible: false, message: '' });
+
+  const handleEnroll = (workshopId: string) => {
+    setEnrolledWorkshops(prev => {
+      const newSet = new Set(prev);
+      newSet.add(workshopId);
+      return newSet;
+    });
+    setToast({ visible: true, message: '¡Inscrito! Revisa tu correo institucional con el enlace' });
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, visible: false }));
+    }, 3000);
+  };
 
   useEffect(() => {
     const fetchResources = async () => {
@@ -154,8 +169,22 @@ export default function Resources({ onLogout, onNavigate, user }: ResourcesProps
                         </p>
                       </div>
                     </div>
-                    <button onClick={() => alert('Funcionalidad en desarrollo para el prototipo. ¡Próximamente!')} className="w-full sm:w-auto px-4 py-2 bg-blue-50 text-blue-700 font-bold text-xs rounded-lg hover:bg-blue-100 transition-colors shrink-0">
-                      Inscribirse
+                    <button 
+                      onClick={() => !enrolledWorkshops.has(workshop.id) && handleEnroll(workshop.id)}
+                      disabled={enrolledWorkshops.has(workshop.id)}
+                      className={`w-full sm:w-auto px-4 py-2 font-bold text-xs rounded-lg transition-colors shrink-0 flex items-center justify-center gap-2 ${
+                        enrolledWorkshops.has(workshop.id)
+                          ? 'bg-emerald-100 text-emerald-700 cursor-not-allowed opacity-90'
+                          : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                      }`}
+                    >
+                      {enrolledWorkshops.has(workshop.id) ? (
+                        <>
+                          <Check size={14} strokeWidth={3} /> ¡Inscrito!
+                        </>
+                      ) : (
+                        'Inscribirse'
+                      )}
                     </button>
                   </div>
                 ))}
@@ -189,6 +218,15 @@ export default function Resources({ onLogout, onNavigate, user }: ResourcesProps
             </div>
           )}
         </div>
+        {/* Toast Notification */}
+        {toast.visible && (
+          <div className="fixed bottom-8 right-8 bg-slate-800 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 z-50 transition-all duration-300">
+            <div className="bg-emerald-500/20 text-emerald-400 p-1 rounded-full">
+              <Check size={18} strokeWidth={3} />
+            </div>
+            <span className="font-medium text-sm">{toast.message}</span>
+          </div>
+        )}
       </main>
     </div>
   );

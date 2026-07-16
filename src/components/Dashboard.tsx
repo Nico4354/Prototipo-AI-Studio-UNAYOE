@@ -41,6 +41,13 @@ export default function Dashboard({ onLogout, onNavigate, aiDiagnostico, estudia
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Buenos días";
+    if (hour < 19) return "Buenas tardes";
+    return "Buenas noches";
+  };
+
   useEffect(() => {
     // Si recibimos datos reales de la IA, usarlos directamente
     if (aiDiagnostico) {
@@ -125,7 +132,7 @@ export default function Dashboard({ onLogout, onNavigate, aiDiagnostico, estudia
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-3">
               <div className="text-right">
-                <p className="text-xs font-semibold">{user?.name || 'Alex Rivera'}</p>
+                <p className="text-xs font-semibold">{getGreeting()}, {user?.name || 'Alex Rivera'}</p>
                 <p className="text-[10px] text-slate-400 leading-none">{user?.program || 'Ingeniería de Software'}</p>
               </div>
               <div className="w-9 h-9 bg-slate-100 rounded-full border-2 border-white shadow-sm overflow-hidden flex items-center justify-center text-slate-500">
@@ -200,7 +207,7 @@ export default function Dashboard({ onLogout, onNavigate, aiDiagnostico, estudia
                       <li key={index} className="flex items-start space-x-3">
                         <div className="mt-1 h-1.5 w-1.5 bg-emerald-400 rounded-full shrink-0"></div>
                         <p className="text-xs text-emerald-700 leading-relaxed">
-                          <b>{item.title}</b>: {item.description} <a className="underline font-bold ml-1" href={item.actionLink || '#'}>{item.actionText}</a>
+                          <b>{item.title}</b>: {item.description} <span className="font-bold ml-1">{item.actionText}</span>
                         </p>
                       </li>
                     ))}
