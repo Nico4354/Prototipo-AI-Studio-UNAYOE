@@ -22,6 +22,7 @@ interface Guide {
   title: string;
   description: string;
   icon: string;
+  content?: string;
 }
 
 export default function Resources({ onLogout, onNavigate, user }: ResourcesProps) {
@@ -31,6 +32,7 @@ export default function Resources({ onLogout, onNavigate, user }: ResourcesProps
   
   const [enrolledWorkshops, setEnrolledWorkshops] = useState<Set<string>>(new Set());
   const [toast, setToast] = useState<{ visible: boolean; message: string }>({ visible: false, message: '' });
+  const [selectedGuide, setSelectedGuide] = useState<Guide | null>(null);
 
   const handleEnroll = (workshopId: string) => {
     setEnrolledWorkshops(prev => {
@@ -78,13 +80,15 @@ export default function Resources({ onLogout, onNavigate, user }: ResourcesProps
             id: 'g1',
             title: 'Técnica Pomodoro para Programadores',
             description: 'Maximiza tu concentración estructurando tus sesiones de código.',
-            icon: 'Clock'
+            icon: 'Clock',
+            content: 'La técnica Pomodoro es un método de gestión del tiempo desarrollado por Francesco Cirillo a fines de la década de 1980.\n\nSe basa en usar un temporizador para dividir el trabajo en intervalos, tradicionalmente de 25 minutos de duración, separados por breves descansos. Para los estudiantes de ingeniería y programadores, esto es especialmente útil para evitar la fatiga mental y mantener un alto nivel de concentración durante la resolución de problemas complejos o la depuración de código.\n\nIntenta aplicar 4 "pomodoros" seguidos de un descanso largo de 15 a 30 minutos. Notarás cómo tu productividad y bienestar mejoran significativamente.'
           },
           {
             id: 'g2',
             title: 'Guía de Higiene del Sueño',
             description: 'Mejora tu descanso y rendimiento académico con rutinas efectivas.',
-            icon: 'Moon'
+            icon: 'Moon',
+            content: 'La higiene del sueño hace referencia a una serie de hábitos y rutinas que nos ayudan a conciliar el sueño más fácilmente y a dormir profundamente, de manera que nos despertemos descansados.\n\nPara los estudiantes universitarios, es común sacrificar horas de sueño por estudiar. Sin embargo, el sueño es fundamental para la consolidación de la memoria y el aprendizaje. Evita la exposición a pantallas (luz azul) al menos una hora antes de dormir y trata de mantener un horario regular para acostarte y levantarte, incluso los fines de semana.\n\nRecuerda: una mente descansada retiene mejor la información y rinde mejor en los exámenes y evaluaciones.'
           }
         ]);
       } finally {
@@ -208,7 +212,7 @@ export default function Resources({ onLogout, onNavigate, user }: ResourcesProps
                         <p className="text-xs text-slate-500 leading-relaxed">{guide.description}</p>
                       </div>
                     </div>
-                    <button onClick={() => alert('Funcionalidad en desarrollo para el prototipo. ¡Próximamente!')} className="w-full sm:w-auto px-4 py-2 bg-emerald-50 test text-emerald-700 font-bold text-xs rounded-lg hover:bg-emerald-100 transition-colors shrink-0">
+                    <button onClick={() => setSelectedGuide(guide)} className="w-full sm:w-auto px-4 py-2 bg-emerald-50 text-emerald-700 font-bold text-xs rounded-lg hover:bg-emerald-100 transition-colors shrink-0">
                       Leer Guía
                     </button>
                   </div>
@@ -225,6 +229,31 @@ export default function Resources({ onLogout, onNavigate, user }: ResourcesProps
               <Check size={18} strokeWidth={3} />
             </div>
             <span className="font-medium text-sm">{toast.message}</span>
+          </div>
+        )}
+
+        {/* Reading Modal */}
+        {selectedGuide && (
+          <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="bg-emerald-50 text-emerald-600 p-2 rounded-xl">
+                    {getIcon(selectedGuide.icon, "w-6 h-6")}
+                  </div>
+                  <h2 className="text-xl font-bold text-slate-800">{selectedGuide.title}</h2>
+                </div>
+                <button onClick={() => setSelectedGuide(null)} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-bold transition-colors">
+                  Cerrar
+                </button>
+              </div>
+              
+              <div className="text-slate-700 leading-relaxed text-[15px] space-y-4">
+                {selectedGuide.content?.split('\n\n').map((paragraph, idx) => (
+                  <p key={idx}>{paragraph}</p>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </main>
